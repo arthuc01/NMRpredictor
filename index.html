@@ -6,23 +6,33 @@
   <title>NMR Predictor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260522a">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260522b">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
   <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
   <script src="https://jsme-editor.github.io/dist/jsme/jsme.nocache.js"></script>
-  <script src="nmr-predictor.js?v=20260522a" defer></script>
+  <script src="nmr-predictor.js?v=20260522b" defer></script>
 </head>
 <body>
   <div class="page-shell">
-    <nav class="page-nav" aria-label="Site">
-      <a class="nav-link nav-link-active" href="index.html">NMR Predictor</a>
-      <a class="nav-link" href="multiplet.html">Multiplet Modeller</a>
-      <a class="nav-link" href="notes.html">Heuristic Notes</a>
-    </nav>
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark">NP</div>
+        <div>
+          <p class="topbar-label">Arthur Group</p>
+          <strong>NMRpredictor</strong>
+        </div>
+      </div>
+      <nav class="page-nav" aria-label="Site">
+        <a class="nav-link nav-link-active" href="index.html">Predictor</a>
+        <a class="nav-link" href="multiplet.html">Multiplet</a>
+        <a class="nav-link" href="notes.html">Notes</a>
+      </nav>
+      <a class="utility-pill" href="README.md#api">API Docs</a>
+    </header>
 
-    <header class="hero">
+    <section class="hero">
       <div>
         <p class="eyebrow">Arthur Group : University of Bristol School of Chemistry</p>
         <h1>NMR Spectra Predictor</h1>
@@ -31,25 +41,59 @@
           The model is intentionally heuristic and designed for explaining trends, environments, and simple splitting logic rather than analytical assignment.
           <a href="notes.html">Read the heuristic model notes.</a>
         </p>
-      </div>
-      <div class="hero-card">
-        <p class="hero-card-label">Example molecules</p>
-        <div class="chip-row">
-          <button class="chip nmr-example" type="button" data-smiles="CCO">ethanol</button>
-          <button class="chip nmr-example" type="button" data-smiles="CC(=O)O">acetic acid</button>
-          <button class="chip nmr-example" type="button" data-smiles="CCOC(=O)C">ethyl acetate</button>
-          <button class="chip nmr-example" type="button" data-smiles="c1ccccc1">benzene</button>
-          <button class="chip nmr-example" type="button" data-smiles="CC(=O)OC1=CC=CC=C1C(=O)O">aspirin</button>
-          <button class="chip nmr-example" type="button" data-smiles="C1CN2CC3=CCO[C@H]4CC(=O)N5[C@H]6[C@H]4[C@H]3C[C@H]2[C@@]61C7=CC=CC=C75">strychnine</button>
+        <div class="hero-actions">
+          <a class="primary-button hero-link-button" href="#predictor-workbench">Open Workbench</a>
+          <a class="secondary-button hero-link-button" href="#api">See API</a>
         </div>
       </div>
-    </header>
+      <aside class="hero-card hero-card-stack">
+        <div class="hero-card-section">
+          <p class="hero-card-label">Quick API</p>
+          <p class="hero-card-copy">Return a spectrum CSV with a single GET request.</p>
+          <code class="inline-code-block">/api/spectrum?smiles=CCO&amp;type=proton</code>
+        </div>
+        <div class="hero-card-section">
+          <p class="hero-card-label">Example molecules</p>
+          <div class="chip-row">
+            <button class="chip nmr-example" type="button" data-smiles="CCO">ethanol</button>
+            <button class="chip nmr-example" type="button" data-smiles="CC(=O)O">acetic acid</button>
+            <button class="chip nmr-example" type="button" data-smiles="CCOC(=O)C">ethyl acetate</button>
+            <button class="chip nmr-example" type="button" data-smiles="c1ccccc1">benzene</button>
+            <button class="chip nmr-example" type="button" data-smiles="CC(=O)OC1=CC=CC=C1C(=O)O">aspirin</button>
+            <button class="chip nmr-example" type="button" data-smiles="C1CN2CC3=CCO[C@H]4CC(=O)N5[C@H]6[C@H]4[C@H]3C[C@H]2[C@@]61C7=CC=CC=C75">strychnine</button>
+          </div>
+        </div>
+      </aside>
+    </section>
 
-    <main class="app-grid nmr-predictor-grid">
+    <section class="summary-grid dashboard-summary">
+      <div class="summary-card accent-coral">
+        <span class="summary-label">RDKit JS</span>
+        <strong id="nmrp-rdkit-summary">loading</strong>
+        <span class="summary-meta">structure renderer</span>
+      </div>
+      <div class="summary-card accent-emerald">
+        <span class="summary-label">1H Environments</span>
+        <strong id="nmrp-proton-summary">-</strong>
+        <span class="summary-meta">predicted proton groups</span>
+      </div>
+      <div class="summary-card accent-gold">
+        <span class="summary-label">13C Environments</span>
+        <strong id="nmrp-carbon-summary">-</strong>
+        <span class="summary-meta">predicted carbon groups</span>
+      </div>
+      <div class="summary-card accent-violet">
+        <span class="summary-label">2D Peaks</span>
+        <strong><span id="nmrp-hsqc-summary">-</span> / <span id="nmrp-cosy-summary">-</span> / <span id="nmrp-noesy-summary">-</span></strong>
+        <span class="summary-meta">HSQC / COSY / NOESY</span>
+      </div>
+    </section>
+
+    <main id="predictor-workbench" class="app-grid nmr-predictor-grid">
       <section class="panel controls-panel">
         <div class="panel-heading">
           <h2>Structure Input</h2>
-          <p>Molecules may be drawn below or entered as a <a href="https://en.wikipedia.org/wiki/Simplified_Molecular_Input_Line_Entry_System">SMILES string</a>.</p>
+          <p>Molecules may be drawn below or entered as a <a href="https://en.wikipedia.org/wiki/Simplified_Molecular_Input_Line_Entry_System">SMILES string</a>. The same heuristics power both the browser workbench and the API export.</p>
         </div>
 
         <label class="field">
@@ -67,36 +111,9 @@
         <div id="jsme-container" class="jsme-container">
           <div class="plot-empty">Loading JSME structure editor...</div>
         </div>
-
-        <div class="summary-grid">
-          <div class="summary-card">
-            <span class="summary-label">RDKit JS</span>
-            <strong id="nmrp-rdkit-summary">loading</strong>
-          </div>
-          <div class="summary-card">
-            <span class="summary-label">1H Environments</span>
-            <strong id="nmrp-proton-summary">-</strong>
-          </div>
-          <div class="summary-card">
-            <span class="summary-label">13C Environments</span>
-            <strong id="nmrp-carbon-summary">-</strong>
-          </div>
-          <div class="summary-card">
-            <span class="summary-label">HSQC Peaks</span>
-            <strong id="nmrp-hsqc-summary">-</strong>
-          </div>
-          <div class="summary-card">
-            <span class="summary-label">COSY Peaks</span>
-            <strong id="nmrp-cosy-summary">-</strong>
-          </div>
-          <div class="summary-card">
-            <span class="summary-label">NOESY Peaks</span>
-            <strong id="nmrp-noesy-summary">-</strong>
-          </div>
-          <div class="summary-card">
-            <span class="summary-label">Method</span>
-            <strong>group first, then shift heuristics</strong>
-          </div>
+        <div class="dashboard-note">
+          <strong>Prediction method</strong>
+          <span>Group first, then shift heuristics. Exported CSVs are generated from the same browser-side model.</span>
         </div>
       </section>
 
@@ -152,6 +169,30 @@
           </thead>
           <tbody id="nmrp-table-body"></tbody>
         </table>
+      </div>
+    </section>
+
+    <section id="api" class="panel api-panel">
+      <div class="panel-heading">
+        <h2>CSV API</h2>
+        <p>Run the local Node API to return a CSV directly from a SMILES string and spectrum type.</p>
+      </div>
+      <div class="api-grid">
+        <div class="api-card">
+          <span class="api-card-label">Endpoint</span>
+          <code class="inline-code-block">GET /api/spectrum?smiles=CCO&amp;type=proton</code>
+          <p class="api-copy">Supported types: <code>proton</code>, <code>carbon</code>, <code>hsqc</code>, <code>cosy</code>, <code>noesy</code>.</p>
+        </div>
+        <div class="api-card">
+          <span class="api-card-label">Run locally</span>
+          <pre class="code-block"><code>npm run api</code></pre>
+          <pre class="code-block"><code>curl "http://localhost:3000/api/spectrum?smiles=CCO&amp;type=proton" -o ethanol-1h.csv</code></pre>
+        </div>
+        <div class="api-card">
+          <span class="api-card-label">Docs</span>
+          <p class="api-copy">The full API description and response details are in the repository README.</p>
+          <a class="secondary-button hero-link-button" href="README.md#api">Open README API section</a>
+        </div>
       </div>
     </section>
   </div>

@@ -4,9 +4,11 @@
   "version": "0.0.0",
   "description": "Static NMR teaching tools with lightweight Node smoke tests.",
   "scripts": {
-    "test": "node tests/nmr-predictor-smoke.test.js && node tests/nmr-predictor-aromatic-trends.test.js && node tests/nmr-predictor-parser-edgecases.test.js",
+    "test": "node tests/nmr-predictor-smoke.test.js && node tests/nmr-predictor-aromatic-trends.test.js && node tests/nmr-predictor-parser-edgecases.test.js && node tests/nmr-predictor-api.test.js",
+    "api": "node api-server.js",
     "test:smoke": "node tests/nmr-predictor-smoke.test.js",
     "test:aromatic": "node tests/nmr-predictor-aromatic-trends.test.js",
-    "test:parser": "node tests/nmr-predictor-parser-edgecases.test.js"
+    "test:parser": "node tests/nmr-predictor-parser-edgecases.test.js",
+    "test:api": "node tests/nmr-predictor-api.test.js"
   }
 }
