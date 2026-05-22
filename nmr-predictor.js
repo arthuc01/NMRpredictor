@@ -3328,7 +3328,7 @@ function buildAllSpectraNef() {
     "   _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data",
     "   _nef_nmr_meta_data.format_name      nmr_exchange_format",
     "   _nef_nmr_meta_data.format_version   1.1",
-    "   _nef_nmr_meta_data.program_name     IsotopePatternSimulator_NMR_Predictor",
+    "   _nef_nmr_meta_data.program_name     NMRpredictor",
     "   _nef_nmr_meta_data.program_version  browser_teaching_model",
     `   _nef_nmr_meta_data.creation_date    ${nefQuote(new Date().toISOString())}`,
     "save_",
