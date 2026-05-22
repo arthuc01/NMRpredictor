@@ -2544,6 +2544,7 @@ function syncFullscreenSupplementaryView() {
       NMRP.structure.classList.add("is-fullscreen-jsme");
       NMRP.structure.appendChild(jsmeContainer);
     }
+    state.jsme?.setSize?.("100%", "100%");
   } else {
     if (state.jsmePlaceholder?.parentNode && jsmeContainer.parentNode !== state.jsmePlaceholder.parentNode) {
       state.jsmePlaceholder.parentNode.insertBefore(jsmeContainer, state.jsmePlaceholder);
@@ -2551,6 +2552,7 @@ function syncFullscreenSupplementaryView() {
     state.jsmePlaceholder?.parentNode?.removeChild(state.jsmePlaceholder);
     state.jsmePlaceholder = null;
     NMRP.structure.classList.remove("is-fullscreen-jsme");
+    state.jsme?.setSize?.("100%", "360px");
     if (state.graph && state.lastSmiles) {
       tryRenderRdkit(state.lastSmiles);
     } else {

@@ -768,9 +768,30 @@ output {
   height: calc(100vh - 260px);
 }
 
+.plot-panel:fullscreen .nmrp-visual-grid,
+.plot-panel:-webkit-full-screen .nmrp-visual-grid {
+  grid-template-columns: minmax(440px, 0.95fr) minmax(0, 1.7fr);
+  gap: 18px;
+}
+
 .plot-panel:fullscreen .nmrp-structure-column,
 .plot-panel:-webkit-full-screen .nmrp-structure-column {
-  grid-template-rows: minmax(280px, 0.95fr) minmax(220px, 0.8fr);
+  grid-template-rows: 1fr;
+}
+
+.plot-panel:fullscreen .nmrp-structure-3d,
+.plot-panel:-webkit-full-screen .nmrp-structure-3d {
+  display: none;
+}
+
+.plot-panel:fullscreen .nmrp-structure.is-fullscreen-jsme,
+.plot-panel:-webkit-full-screen .nmrp-structure.is-fullscreen-jsme {
+  min-height: calc(100vh - 260px);
+}
+
+.plot-panel:fullscreen .nmrp-structure.is-fullscreen-jsme .jsme-container,
+.plot-panel:-webkit-full-screen .nmrp-structure.is-fullscreen-jsme .jsme-container {
+  min-height: calc(100vh - 260px);
 }
 
 .nmrp-peak,
