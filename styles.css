@@ -1,0 +1,795 @@
+:root {
+  --bg-top: #f5efe1;
+  --bg-bottom: #d8e6f0;
+  --panel: rgba(255, 252, 247, 0.88);
+  --panel-border: rgba(31, 48, 61, 0.12);
+  --ink: #18242d;
+  --muted: #56646f;
+  --accent: #0d6c74;
+  --accent-strong: #0a4c57;
+  --accent-soft: rgba(13, 108, 116, 0.12);
+  --shadow: 0 20px 50px rgba(20, 37, 49, 0.12);
+  --radius: 22px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(245, 177, 66, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(13, 108, 116, 0.18), transparent 24%),
+    linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(24, 36, 45, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 36, 45, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent 85%);
+}
+
+.page-shell {
+  width: min(1240px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+
+.page-nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(24, 36, 45, 0.06);
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.nav-link:hover {
+  transform: translateY(-1px);
+}
+
+.nav-link-active {
+  background: var(--accent);
+  color: #f8fbfb;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 3.4vw, 3.1rem);
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+}
+
+.hero-copy,
+.panel-heading p,
+.summary-label,
+.status-message,
+th,
+td {
+  color: var(--muted);
+}
+
+.hero-copy {
+  margin-top: 14px;
+  max-width: 58ch;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.hero-card,
+.panel {
+  backdrop-filter: blur(12px);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+}
+
+.hero-card {
+  padding: 18px;
+}
+
+.hero-card-label {
+  margin-bottom: 12px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.chip-row,
+.button-row,
+.field-group,
+.summary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chip,
+.primary-button,
+.secondary-button {
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.chip {
+  padding: 10px 14px;
+  background: rgba(24, 36, 45, 0.06);
+  color: var(--ink);
+}
+
+.chip:hover,
+.primary-button:hover,
+.secondary-button:hover {
+  transform: translateY(-1px);
+}
+
+.app-grid {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.panel {
+  padding: 22px;
+}
+
+.controls-panel,
+.plot-panel,
+.table-panel {
+  animation: rise 420ms ease both;
+}
+
+.plot-panel {
+  animation-delay: 80ms;
+}
+
+.table-panel {
+  margin-top: 24px;
+  animation-delay: 160ms;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-heading {
+  margin-bottom: 18px;
+}
+
+.panel-heading h2 {
+  margin-bottom: 6px;
+  font-size: 1.1rem;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.compact-field {
+  max-width: 180px;
+  margin-bottom: 0;
+}
+
+.field span {
+  font-size: 0.92rem;
+}
+
+input[type="text"] {
+  width: 100%;
+  border: 1px solid rgba(24, 36, 45, 0.12);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font: 500 1rem "IBM Plex Mono", monospace;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+input[type="number"],
+select {
+  width: 100%;
+  border: 1px solid rgba(24, 36, 45, 0.12);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font: 500 1rem "IBM Plex Mono", monospace;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+output {
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--accent-strong);
+}
+
+.checkbox-field {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.checkbox-field input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.primary-button,
+.secondary-button {
+  padding: 12px 16px;
+}
+
+.primary-button {
+  background: var(--accent);
+  color: #f8fbfb;
+}
+
+.secondary-button {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.status-message {
+  min-height: 1.4rem;
+  margin: 8px 0 18px;
+  font-size: 0.94rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.summary-card {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(24, 36, 45, 0.08);
+  min-width: 0;
+}
+
+.summary-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.summary-card strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1rem;
+  display: block;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.plot-area {
+  width: 100%;
+  min-height: min(540px, calc(100vh - 220px));
+  height: var(--plot-height, 540px);
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(24, 36, 45, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(239, 247, 248, 0.9));
+}
+
+.plot-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.plot-svg {
+  display: block;
+  width: 100%;
+  height: var(--plot-height, 540px);
+}
+
+.plot-empty {
+  display: grid;
+  place-items: center;
+  height: var(--plot-height, 540px);
+  color: var(--muted);
+}
+
+.plot-tooltip {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(12px, -12px);
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(24, 36, 45, 0.92);
+  color: #f4f8f8;
+  font: 500 0.82rem "IBM Plex Mono", monospace;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.zoom-box {
+  position: absolute;
+  top: 0;
+  height: 0;
+  border: 1px solid rgba(13, 108, 116, 0.65);
+  background: rgba(13, 108, 116, 0.14);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.charge-group {
+  align-items: end;
+}
+
+.table-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.mass-input-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mass-field {
+  display: grid;
+  gap: 8px;
+}
+
+.mass-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 999px;
+  font: 500 0.82rem "IBM Plex Mono", monospace;
+  color: #f8fbfb;
+  padding: 0 12px;
+}
+
+.mass-chip-toggle {
+  border: 0;
+  cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease, box-shadow 150ms ease;
+}
+
+.mass-chip-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.mass-chip-toggle.is-inactive {
+  opacity: 0.45;
+  box-shadow: inset 0 0 0 1px rgba(24, 36, 45, 0.18);
+}
+
+.mass-chip-light {
+  background: hsl(205, 92%, 44%);
+}
+
+.mass-chip-mid {
+  background: hsl(128, 78%, 38%);
+}
+
+.mass-chip-heavy {
+  background: hsl(42, 92%, 44%);
+  color: #24323b;
+}
+
+.orbitrap-grid {
+  align-items: start;
+}
+
+.orbitrap-stage {
+  position: relative;
+  width: 100%;
+  min-height: min(680px, calc(100vh - 220px));
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(24, 36, 45, 0.08);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.84), rgba(229, 241, 244, 0.72)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(239, 247, 248, 0.9));
+}
+
+.orbitrap-canvas {
+  display: block;
+  width: 100%;
+  height: min(680px, calc(100vh - 220px));
+}
+
+.orbitrap-overlay {
+  position: absolute;
+  inset: 18px 18px auto auto;
+  display: flex;
+  gap: 8px;
+  font: 500 0.88rem "IBM Plex Mono", monospace;
+  color: rgba(10, 76, 87, 0.7);
+}
+
+.tof-grid {
+  align-items: start;
+}
+
+.tof-stage {
+  position: relative;
+  width: 100%;
+  min-height: min(680px, calc(100vh - 220px));
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(24, 36, 45, 0.08);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.86), rgba(233, 242, 244, 0.74)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(237, 244, 247, 0.88));
+}
+
+.tof-canvas {
+  display: block;
+  width: 100%;
+  height: min(680px, calc(100vh - 220px));
+}
+
+.nmr-grid {
+  align-items: start;
+}
+
+.nmr-predictor-grid {
+  align-items: start;
+}
+
+.nmr-layers {
+  margin-bottom: 18px;
+  border: 1px solid rgba(24, 36, 45, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.nmr-layer-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) minmax(0, 130px);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(24, 36, 45, 0.08);
+}
+
+.nmr-layer-row:last-child {
+  border-bottom: 0;
+}
+
+.nmr-layer-head {
+  background: rgba(13, 108, 116, 0.08);
+  color: var(--accent-strong);
+  font: 500 0.82rem "IBM Plex Mono", monospace;
+}
+
+.nmr-layer-row span {
+  font-size: 0.88rem;
+}
+
+.nmr-layer-row select,
+.nmr-layer-row input[type="number"] {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.tree-area {
+  width: 100%;
+  min-height: 340px;
+  border-radius: 18px;
+  border: 1px solid rgba(24, 36, 45, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(239, 247, 248, 0.9));
+  overflow: hidden;
+}
+
+.tree-svg {
+  width: 100%;
+  height: 340px;
+  display: block;
+}
+
+.nmr-plot-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.nmr-subtitle {
+  margin: 0 0 6px;
+  font: 500 0.9rem "IBM Plex Mono", monospace;
+  color: var(--accent-strong);
+}
+
+.nmr-spectrum-area {
+  min-height: var(--nmr-spectrum-height, 280px);
+  height: var(--nmr-spectrum-height, 280px);
+}
+
+.tree-area {
+  min-height: var(--tree-height, 220px);
+  height: var(--tree-height, 220px);
+}
+
+.tree-svg {
+  height: var(--tree-height, 220px);
+}
+
+.jsme-container {
+  min-height: 360px;
+  margin: 14px 0 18px;
+  border: 1px solid rgba(24, 36, 45, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.nmrp-structure {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(24, 36, 45, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.66);
+  overflow: hidden;
+}
+
+.nmrp-structure svg {
+  width: min(50%, 230px);
+  height: auto;
+  max-height: 130px;
+}
+
+.nmrp-visual-grid {
+  display: grid;
+  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.nmrp-structure-column {
+  display: grid;
+  grid-template-rows: minmax(120px, auto) minmax(180px, 1fr);
+  gap: 14px;
+}
+
+.nmrp-structure-3d {
+  min-height: 220px;
+  border: 1px solid rgba(24, 36, 45, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.66);
+  overflow: hidden;
+  position: relative;
+}
+
+.nmrp-structure-3d .plot-empty {
+  height: 100%;
+}
+
+.nmrp-spectrum-area {
+  min-height: 360px;
+  height: clamp(360px, calc(100vh - 320px), 480px);
+  cursor: crosshair;
+}
+
+.nmrp-spectrum-caption {
+  margin: 2px 0 10px;
+  font: 500 0.82rem "IBM Plex Mono", monospace;
+  color: #41515d;
+}
+
+.nmrp-spectrum-area .plot-svg {
+  height: 100%;
+}
+
+.nmrp-spectrum-area .plot-empty {
+  height: 100%;
+}
+
+.plot-panel:fullscreen,
+.plot-panel:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  padding: 18px;
+  overflow: auto;
+  background: #f4f7f9;
+}
+
+.plot-panel:fullscreen .nmrp-spectrum-area,
+.plot-panel:-webkit-full-screen .nmrp-spectrum-area {
+  min-height: 420px;
+  height: calc(100vh - 260px);
+}
+
+.nmrp-peak {
+  cursor: pointer;
+}
+
+.nmrp-assignment-row {
+  cursor: pointer;
+}
+
+.nmrp-assignment-row:hover,
+.nmrp-assignment-row.is-selected {
+  background: rgba(13, 108, 116, 0.10);
+}
+
+.nmrp-highlight-note {
+  width: 100%;
+  padding: 8px 12px 12px;
+  text-align: center;
+  font: 500 0.82rem "IBM Plex Mono", monospace;
+  color: #a11d37;
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(24, 36, 45, 0.08);
+  text-align: left;
+}
+
+td:nth-child(2),
+td:nth-child(3),
+th:nth-child(2),
+th:nth-child(3) {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+code {
+  font-family: "IBM Plex Mono", monospace;
+  background: rgba(24, 36, 45, 0.05);
+  border-radius: 8px;
+  padding: 2px 6px;
+}
+
+@media (max-width: 980px) {
+  .hero,
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+
+  .mass-input-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nmr-layer-row {
+    grid-template-columns: 46px minmax(0, 1fr) minmax(0, 112px);
+  }
+
+  .nmrp-visual-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nmrp-structure-column {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-shell {
+    width: min(100% - 24px, 100%);
+    padding-top: 20px;
+  }
+
+  .page-nav {
+    flex-wrap: wrap;
+  }
+
+  .panel,
+  .hero-card {
+    padding: 18px;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    white-space: normal;
+  }
+
+  .plot-area {
+    min-height: min(420px, calc(100vh - 180px));
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-controls {
+    justify-content: stretch;
+  }
+
+  .compact-field {
+    max-width: none;
+    width: 100%;
+  }
+
+  .orbitrap-stage,
+  .orbitrap-canvas,
+  .tof-stage,
+  .tof-canvas {
+    min-height: min(520px, calc(100vh - 180px));
+    height: min(520px, calc(100vh - 180px));
+  }
+
+  .nmrp-structure-column {
+    grid-template-columns: 1fr;
+  }
+}

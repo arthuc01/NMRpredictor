@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NMR Predictor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260522a">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+  <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+  <script src="https://jsme-editor.github.io/dist/jsme/jsme.nocache.js"></script>
+  <script src="nmr-predictor.js?v=20260522a" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <nav class="page-nav" aria-label="Site">
+      <a class="nav-link nav-link-active" href="index.html">NMR Predictor</a>
+      <a class="nav-link" href="multiplet.html">Multiplet Modeller</a>
+      <a class="nav-link" href="notes.html">Heuristic Notes</a>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Arthur Group : University of Bristol School of Chemistry</p>
+        <h1>NMR Spectra Predictor</h1>
+        <p class="hero-copy">
+          Enter a SMILES string or draw a small molecule to generate teaching-level 1H, 13C, HSQC, COSY, and NOESY spectra.
+          The model is intentionally heuristic and designed for explaining trends, environments, and simple splitting logic rather than analytical assignment.
+          <a href="notes.html">Read the heuristic model notes.</a>
+        </p>
+      </div>
+      <div class="hero-card">
+        <p class="hero-card-label">Example molecules</p>
+        <div class="chip-row">
+          <button class="chip nmr-example" type="button" data-smiles="CCO">ethanol</button>
+          <button class="chip nmr-example" type="button" data-smiles="CC(=O)O">acetic acid</button>
+          <button class="chip nmr-example" type="button" data-smiles="CCOC(=O)C">ethyl acetate</button>
+          <button class="chip nmr-example" type="button" data-smiles="c1ccccc1">benzene</button>
+          <button class="chip nmr-example" type="button" data-smiles="CC(=O)OC1=CC=CC=C1C(=O)O">aspirin</button>
+          <button class="chip nmr-example" type="button" data-smiles="C1CN2CC3=CCO[C@H]4CC(=O)N5[C@H]6[C@H]4[C@H]3C[C@H]2[C@@]61C7=CC=CC=C75">strychnine</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-grid nmr-predictor-grid">
+      <section class="panel controls-panel">
+        <div class="panel-heading">
+          <h2>Structure Input</h2>
+          <p>Molecules may be drawn below or entered as a <a href="https://en.wikipedia.org/wiki/Simplified_Molecular_Input_Line_Entry_System">SMILES string</a>.</p>
+        </div>
+
+        <label class="field">
+          <span>SMILES</span>
+          <input id="nmrp-smiles-input" type="text" value="CCO" spellcheck="false" autocomplete="off">
+        </label>
+
+        <div class="button-row">
+          <button id="nmrp-predict-button" class="primary-button" type="button">Predict NMR</button>
+          <button id="nmrp-draw-button" class="secondary-button" type="button">Send SMILES to JSME</button>
+        </div>
+
+        <div id="nmrp-status" class="status-message" role="status" aria-live="polite"></div>
+
+        <div id="jsme-container" class="jsme-container">
+          <div class="plot-empty">Loading JSME structure editor...</div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span class="summary-label">RDKit JS</span>
+            <strong id="nmrp-rdkit-summary">loading</strong>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">1H Environments</span>
+            <strong id="nmrp-proton-summary">-</strong>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">13C Environments</span>
+            <strong id="nmrp-carbon-summary">-</strong>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">HSQC Peaks</span>
+            <strong id="nmrp-hsqc-summary">-</strong>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">COSY Peaks</span>
+            <strong id="nmrp-cosy-summary">-</strong>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">NOESY Peaks</span>
+            <strong id="nmrp-noesy-summary">-</strong>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">Method</span>
+            <strong>group first, then shift heuristics</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel plot-panel">
+        <div class="panel-heading">
+          <h2>Predicted Spectra</h2>
+          <p>Switch between proton and carbon spectra. Proton splitting uses a simple n+1 rule from adjacent carbon-bound hydrogens and does not model geminal or long-range couplings.</p>
+        </div>
+
+        <div class="plot-toolbar">
+          <button id="nmrp-proton-tab" class="chip nav-link-active" type="button">1H NMR</button>
+          <button id="nmrp-carbon-tab" class="chip" type="button">13C NMR</button>
+          <button id="nmrp-hsqc-tab" class="chip" type="button">HSQC</button>
+          <button id="nmrp-cosy-tab" class="chip" type="button">COSY</button>
+          <button id="nmrp-noesy-tab" class="chip" type="button">NOESY</button>
+          <button id="nmrp-fullscreen" class="chip" type="button">Full Screen</button>
+          <button id="nmrp-download-csv" class="chip" type="button">Download CSV</button>
+          <button id="nmrp-download-nef" class="chip" type="button">Download NEF</button>
+          <button id="nmrp-zoom-in" class="chip" type="button">Zoom In</button>
+          <button id="nmrp-zoom-out" class="chip" type="button">Zoom Out</button>
+          <button id="nmrp-reset-zoom" class="chip" type="button">Reset Zoom</button>
+        </div>
+        <p id="nmrp-spectrum-caption" class="nmrp-spectrum-caption">Switch between 1D and 2D teaching spectra.</p>
+
+        <div class="nmrp-visual-grid">
+          <div class="nmrp-structure-column">
+            <div id="nmrp-structure" class="nmrp-structure"></div>
+            <div id="nmrp-structure-3d" class="nmrp-structure-3d">
+              <div class="plot-empty">3D model will appear after prediction.</div>
+            </div>
+          </div>
+          <div id="nmrp-spectrum" class="plot-area nmrp-spectrum-area" aria-label="Predicted NMR spectrum"></div>
+        </div>
+      </section>
+    </main>
+
+    <section class="panel table-panel">
+      <div class="panel-heading">
+        <h2>Environment Assignments</h2>
+        <p>Assignments are grouped by crude atom environment. Equivalent symmetry is only approximated by environment labels and predicted shifts.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Atoms</th>
+              <th>Shift</th>
+              <th>Integration</th>
+              <th>Splitting</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="nmrp-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

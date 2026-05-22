@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NMR Predictor Heuristics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260522a">
+</head>
+<body>
+  <div class="page-shell">
+    <nav class="page-nav" aria-label="Site">
+      <a class="nav-link" href="index.html">NMR Predictor</a>
+      <a class="nav-link" href="multiplet.html">Multiplet Modeller</a>
+      <a class="nav-link nav-link-active" href="notes.html">Heuristic Notes</a>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Teaching model notes</p>
+        <h1>NMR Predictor Heuristics</h1>
+        <p class="hero-copy">
+          This page documents the deliberately simple rules used by the teaching NMR predictor. It is designed to explain trends and spectra layout, not to replace curated or quantum-mechanics-based prediction software.
+        </p>
+      </div>
+      <div class="hero-card">
+        <p class="hero-card-label">Scope</p>
+        <p>Group atoms first, predict shifts second, then render 1D and 2D teaching spectra.</p>
+      </div>
+    </header>
+
+    <main class="panel">
+      <div class="panel-heading">
+        <h2>Core Workflow</h2>
+        <p>The predictor is a static browser app, so all chemistry is handled by lightweight JavaScript heuristics.</p>
+      </div>
+      <ul>
+        <li>Parse SMILES into a graph of heavy atoms, bonds, aromatic flags, implicit hydrogens, and simple stereochemical markers.</li>
+        <li>Perceive common Kekule aromatic rings so uppercase benzene-like SMILES still behave as aromatic systems.</li>
+        <li>Group atoms by graph and environment keys before calculating ppm values. Grouping is not based on ppm similarity.</li>
+        <li>Assign base shifts from hand-written functional-group rules, then add small substituent and proximity corrections.</li>
+        <li>Expand 1H multiplets using simple n+1 binomial patterns. Component areas are normalized back to the signal integral.</li>
+        <li>Render 1D spectra as area-normalized Gaussian profiles plus centroid sticks. Broad exchangeable peaks use wider lines and therefore lower maxima.</li>
+      </ul>
+    </main>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>1H Shift Rules</h2>
+        <p>These are rough teaching ranges, calibrated where possible against ChemDraw examples supplied during development.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Environment</th><th>Typical ppm used</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Simple alkyl</td><td>~0.9-1.7</td><td>Methyl, methylene, methine separated crudely by carbon substitution.</td></tr>
+            <tr><td>Benzylic</td><td>~2.3-2.8</td><td>Examples tuned with toluene and ethylbenzene-like cases.</td></tr>
+            <tr><td>Acetyl methyl</td><td>~2.04</td><td>Used for methyl next to ester and acid-type carbonyl.</td></tr>
+            <tr><td>Alkoxy ester CH2/OCH3</td><td>~4.1 / ~3.9</td><td>Tuned against ethyl acetate and methyl benzoate.</td></tr>
+            <tr><td>Vinylic</td><td>~4.5-6.5</td><td>Cis and trans alkene coupling can be shown when SMILES contains slash stereochemistry markers.</td></tr>
+            <tr><td>Aromatic</td><td>~6.5-8.5</td><td>Substituent effects are table-driven for alkyl, alkoxy, acyloxy, carboxyl/acyl, halogen, nitro, amino, and sulfur groups.</td></tr>
+            <tr><td>Aldehyde</td><td>~9.6</td><td>Recognized as carbonyl carbon bearing hydrogen.</td></tr>
+            <tr><td>Phenol OH</td><td>~9</td><td>Broad and solvent dependent.</td></tr>
+            <tr><td>Carboxylic acid OH</td><td>~11-12</td><td>Broad, solvent and concentration dependent, and may disappear in real spectra.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>13C Shift Rules</h2>
+        <p>The 13C model is intentionally range-based. Values are approximate and prioritize useful teaching regions.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Environment</th><th>Typical ppm used</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Simple sp3 carbon</td><td>~10-50</td><td>Separated by methyl, methylene, methine, and quaternary substitution.</td></tr>
+            <tr><td>Benzylic / allylic</td><td>~15-50</td><td>Recognized before generic alkyl assignment.</td></tr>
+            <tr><td>Alpha/beta to carbonyl</td><td>~20-50 / ~20-40</td><td>Used for ordinary non-ester carbonyl proximity.</td></tr>
+            <tr><td>C attached to O/N/S/halogen</td><td>~30-90</td><td>O generally furthest downfield; halogens use element-specific rules.</td></tr>
+            <tr><td>Alkoxy ester CH2/OCH3</td><td>~61 / ~51.5</td><td>Tuned to ethyl acetate and methyl benzoate.</td></tr>
+            <tr><td>Acetal/anomeric-like carbon</td><td>~100</td><td>Carbon attached to two heteroatoms.</td></tr>
+            <tr><td>Nitrile</td><td>~118</td><td>Typical weak signal in the 110-125 ppm region.</td></tr>
+            <tr><td>Alkyne</td><td>~70-80</td><td>Terminal and internal sp carbons separated crudely.</td></tr>
+            <tr><td>Alkene</td><td>~110-150</td><td>Terminal, internal, conjugated, and O-substituted alkenes use separate simple rules.</td></tr>
+            <tr><td>Aromatic</td><td>~120-160</td><td>Substituent tables include ipso, ortho, meta, and para effects for common groups.</td></tr>
+            <tr><td>Ester/acid/amide carbonyl</td><td>~165-180</td><td>Ethyl acetate, methyl benzoate, aspirin, and benzoic-acid-like values are used as calibration anchors.</td></tr>
+            <tr><td>Aldehyde / ketone carbonyl</td><td>~190-220</td><td>Conjugated ketones are shifted slightly upfield.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Splitting And 2D Spectra</h2>
+        <p>The couplings are intentionally simplified for teaching multiplicity.</p>
+      </div>
+      <ul>
+        <li>Aliphatic 1H splitting uses adjacent carbon-bound hydrogens and binomial n+1 patterns.</li>
+        <li>Aromatic splitting only uses hydrogens on directly adjacent aromatic carbons. Non-equivalent adjacent environments can appear as dd-like patterns.</li>
+        <li>Alkene coupling uses approximate constants: trans ~16 Hz, cis ~10 Hz, unspecified ~12 Hz.</li>
+        <li>HSQC shows one-bond H-C correlations only.</li>
+        <li>COSY shows simple adjacent-proton correlations only.</li>
+        <li>NOESY uses CACTUS 3D coordinates when available, otherwise fallback coordinates. Off-diagonal peaks are proton pairs within 5 A, with relative volume approximately proportional to 1/r^6.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Known Limitations</h2>
+        <p>These limitations are deliberate tradeoffs for a transparent teaching tool.</p>
+      </div>
+      <ul>
+        <li>No full spin-system simulation, second-order effects, diastereotopic splitting, or dynamic exchange model.</li>
+        <li>Symmetry and equivalence are graph-environment based and approximate.</li>
+        <li>13C intensities are shown as approximate carbon counts, not real relaxation or NOE-dependent intensities.</li>
+        <li>Exchangeable OH/NH/SH shifts are broad and solvent dependent; real peaks may move or disappear.</li>
+        <li>CACTUS atom order must match the parsed heavy-atom order before its coordinates are used for NOESY distances.</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>

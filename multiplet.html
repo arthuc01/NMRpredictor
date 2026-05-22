@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NMR Multiplet Modeller</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260522a">
+  <script src="nmr.js?v=20260522a" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <nav class="page-nav" aria-label="Site">
+      <a class="nav-link" href="index.html">NMR Predictor</a>
+      <a class="nav-link nav-link-active" href="multiplet.html">Multiplet Modeller</a>
+      <a class="nav-link" href="notes.html">Heuristic Notes</a>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Arthur Group : University of Bristol School of Chemistry</p>
+        <h1>NMR Multiplet Modeller</h1>
+        <p class="hero-copy">
+          Build up to four layers of scalar coupling, assign J values, and visualize both the resulting Gaussian-broadened multiplet and the splitting tree.
+        </p>
+      </div>
+      <div class="hero-card">
+        <p class="hero-card-label">Supported Layers</p>
+        <div class="chip-row">
+          <span class="chip">Doublet</span>
+          <span class="chip">Triplet</span>
+          <span class="chip">Quartet</span>
+          <span class="chip">Up to 4 levels</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-grid nmr-grid">
+      <section class="panel controls-panel">
+        <div class="panel-heading">
+          <h2>Inputs</h2>
+          <p>Linewidth is Gaussian FWHM in Hz. Shift axis is shown in ppm using standard NMR convention, decreasing left to right.</p>
+        </div>
+
+        <div class="field-group">
+          <label class="field">
+            <span>Chemical Shift (ppm)</span>
+            <input id="center-ppm-input" type="number" min="-5" max="20" step="0.001" value="5.650">
+          </label>
+          <label class="field">
+            <span>Spectrometer (MHz)</span>
+            <input id="frequency-input" type="number" min="60" max="1200" step="1" value="400">
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Gaussian Width, FWHM (Hz)</span>
+          <input id="linewidth-input" type="range" min="0.1" max="5" step="0.1" value="0.8">
+          <output id="linewidth-output" for="linewidth-input">0.8 Hz</output>
+        </label>
+
+        <label class="field checkbox-field">
+          <input id="show-centers-toggle" type="checkbox" checked>
+          <span>Show orange peak centers</span>
+        </label>
+
+        <div class="nmr-layers">
+          <div class="nmr-layer-row nmr-layer-head">
+            <span>Layer</span>
+            <span>Multiplet</span>
+            <span>J (Hz)</span>
+          </div>
+
+          <div class="nmr-layer-row">
+            <span>L1</span>
+            <select class="nmr-multiplet" data-layer="1">
+              <option value="none">None</option>
+              <option value="d" selected>Doublet</option>
+              <option value="t">Triplet</option>
+              <option value="q">Quartet</option>
+            </select>
+            <input class="nmr-j" data-layer="1" type="number" min="0" max="30" step="0.1" value="10.0">
+          </div>
+
+          <div class="nmr-layer-row">
+            <span>L2</span>
+            <select class="nmr-multiplet" data-layer="2">
+              <option value="none">None</option>
+              <option value="d">Doublet</option>
+              <option value="t" selected>Triplet</option>
+              <option value="q">Quartet</option>
+            </select>
+            <input class="nmr-j" data-layer="2" type="number" min="0" max="30" step="0.1" value="2.0">
+          </div>
+
+          <div class="nmr-layer-row">
+            <span>L3</span>
+            <select class="nmr-multiplet" data-layer="3">
+              <option value="none" selected>None</option>
+              <option value="d">Doublet</option>
+              <option value="t">Triplet</option>
+              <option value="q">Quartet</option>
+            </select>
+            <input class="nmr-j" data-layer="3" type="number" min="0" max="30" step="0.1" value="0">
+          </div>
+
+          <div class="nmr-layer-row">
+            <span>L4</span>
+            <select class="nmr-multiplet" data-layer="4">
+              <option value="none" selected>None</option>
+              <option value="d">Doublet</option>
+              <option value="t">Triplet</option>
+              <option value="q">Quartet</option>
+            </select>
+            <input class="nmr-j" data-layer="4" type="number" min="0" max="30" step="0.1" value="0">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="predict-button" class="primary-button" type="button">Predict Multiplet</button>
+        </div>
+
+        <div id="nmr-status" class="status-message" role="status" aria-live="polite"></div>
+
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span class="summary-label">Multiplet</span>
+            <strong id="summary-multiplet">-</strong>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">Active Layers</span>
+            <strong id="summary-layers">-</strong>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">Line Count</span>
+            <strong id="summary-lines">-</strong>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">Total Spread</span>
+            <strong id="summary-spread">-</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel plot-panel">
+        <div class="panel-heading">
+          <h2>Splitting Tree And Multiplet Spectrum</h2>
+          <p>Tree is shown above the Gaussian-broadened multiplet.</p>
+        </div>
+        <div class="nmr-plot-stack">
+          <div>
+            <p class="nmr-subtitle">Splitting Tree</p>
+            <div id="nmr-tree" class="tree-area" aria-label="NMR splitting tree"></div>
+          </div>
+          <div>
+            <p class="nmr-subtitle">Multiplet Spectrum</p>
+            <div id="nmr-spectrum" class="plot-area nmr-spectrum-area" aria-label="NMR multiplet spectrum"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
