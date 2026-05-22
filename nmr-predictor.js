@@ -552,12 +552,13 @@ function polyhydroxyCarbonProtonShift(graph, atom) {
 function polyhydroxyCarbonShift(graph, atom) {
   if (!atom || atom.element !== "C" || !isPolyhydroxyContext(graph, atom)) return null;
   const distanceToAldehyde = nearestAldehydeDistance(graph, atom);
-  if (atom.hydrogens >= 2) return { ppm: 62, label: "polyhydroxy CH2OH carbon base range 50-75" };
-  if (distanceToAldehyde === 1) return { ppm: 72, label: "polyhydroxy C-O carbon alpha to aldehyde" };
-  if (distanceToAldehyde === 2) return { ppm: 73, label: "polyhydroxy C-O carbon" };
-  if (distanceToAldehyde === 3) return { ppm: 72, label: "polyhydroxy C-O carbon" };
-  if (distanceToAldehyde === 4) return { ppm: 71, label: "polyhydroxy C-O carbon" };
-  return { ppm: 70, label: "polyhydroxy C-O carbon base range 50-80" };
+  if (atom.hydrogens >= 2) return { ppm: 64.5, label: "polyhydroxy CH2OH carbon base range 60-68" };
+  if (isAcetalLikeCarbon(graph, atom)) return { ppm: 102, label: "polyhydroxy anomeric/acetal carbon teaching range" };
+  if (distanceToAldehyde === 1) return { ppm: 78, label: "polyhydroxy C-O carbon alpha to aldehyde" };
+  if (distanceToAldehyde === 2) return { ppm: 77, label: "polyhydroxy C-O carbon" };
+  if (distanceToAldehyde === 3) return { ppm: 76, label: "polyhydroxy C-O carbon" };
+  if (distanceToAldehyde === 4) return { ppm: 76, label: "polyhydroxy C-O carbon" };
+  return { ppm: 76, label: "polyhydroxy C-O carbon base range 72-80" };
 }
 
 function isAlphaToCarbonylCarbon(graph, atom) {
@@ -578,6 +579,110 @@ function isAllylicCarbon(graph, atom) {
 function isAcetalLikeCarbon(graph, atom) {
   return atom.element === "C" && !atom.aromatic && !isCarbonylCarbon(graph, atom)
     && neighbors(graph, atom).filter(({ atom: n }) => ["O", "N", "S"].includes(n.element)).length >= 2;
+}
+
+function isAlphaAminoCarboxylCarbon(graph, atom) {
+  return atom.element === "C"
+    && neighbors(graph, atom).some(({ atom: n }) => n.element === "N")
+    && neighbors(graph, atom).some(({ atom: n }) => isCarboxylCarbon(graph, n));
+}
+
+function isBranchedAlphaAminoCarboxylCarbon(graph, atom) {
+  if (!isAlphaAminoCarboxylCarbon(graph, atom)) return false;
+  return neighbors(graph, atom).some(({ atom: n }) =>
+    n.element === "C"
+    && !isCarbonylCarbon(graph, n)
+    && n.hydrogens <= 1
+    && carbonDegree(graph, n) >= 2
+  );
+}
+
+function isAlphaHydroxyCarboxylCarbon(graph, atom) {
+  return atom.element === "C"
+    && neighbors(graph, atom).some(({ atom: n }) => n.element === "O")
+    && neighbors(graph, atom).some(({ atom: n }) => isCarboxylCarbon(graph, n));
+}
+
+function isBenzylicCarboxyCarbon(graph, atom) {
+  return atom.element === "C"
+    && isBenzylicCarbon(graph, atom)
+    && neighbors(graph, atom).some(({ atom: n }) => isCarboxylCarbon(graph, n));
+}
+
+function isBetaToAlphaHeteroCarboxylCenter(graph, atom) {
+  return atom.element === "C"
+    && neighbors(graph, atom).some(({ atom: n }) => isAlphaAminoCarboxylCarbon(graph, n) || isAlphaHydroxyCarboxylCarbon(graph, n));
+}
+
+function distanceToOtherCarboxylCarbon(graph, atom) {
+  if (!atom || atom.element !== "C") return Infinity;
+  const distances = shortestPathDistances(graph, atom.id);
+  const targets = graph.atoms.filter((entry) => isCarboxylCarbon(graph, entry) && entry.id !== atom.id);
+  if (!targets.length) return Infinity;
+  return Math.min(...targets.map((entry) => distances[entry.id]));
+}
+
+function hasAdditionalCarboxylSidechain(graph, atom) {
+  if (!isAlphaAminoCarboxylCarbon(graph, atom)) return false;
+  const alphaCarboxylIds = new Set(
+    neighbors(graph, atom)
+      .filter(({ atom: n }) => isCarboxylCarbon(graph, n))
+      .map(({ atom: n }) => n.id)
+  );
+  return neighbors(graph, atom).some(({ atom: n }) =>
+    n.element === "C"
+    && !isCarbonylCarbon(graph, n)
+    && graph.atoms.some((entry) => isCarboxylCarbon(graph, entry) && !alphaCarboxylIds.has(entry.id)
+      && shortestPathDistances(graph, n.id)[entry.id] <= 2)
+  );
+}
+
+function isDicarboxylicMethylene(graph, atom) {
+  return atom.element === "C"
+    && atom.hydrogens === 2
+    && neighbors(graph, atom).filter(({ atom: n }) => isAlphaToCarbonylCarbon(graph, n) || isCarboxylCarbon(graph, n)).length >= 2;
+}
+
+function isAlphaToCarboxylCarbon(graph, atom) {
+  return atom.element === "C"
+    && neighbors(graph, atom).some(({ atom: n }) => isCarboxylCarbon(graph, n));
+}
+
+function isHydroxyDicarboxylicMethylene(graph, atom) {
+  return atom.element === "C"
+    && atom.hydrogens === 2
+    && isAlphaToCarboxylCarbon(graph, atom)
+    && neighbors(graph, atom).some(({ atom: n }) => isAlphaHydroxyCarboxylCarbon(graph, n));
+}
+
+function isBridgeMethyleneBetweenCarboxylAndTertiaryCO(graph, atom) {
+  return atom.element === "C"
+    && atom.hydrogens === 2
+    && isAlphaToCarboxylCarbon(graph, atom)
+    && neighbors(graph, atom).some(({ atom: n }) =>
+      n.element === "C"
+      && !isCarbonylCarbon(graph, n)
+      && n.hydrogens === 0
+      && neighbors(graph, n).some(({ atom: m }) => m.element === "O")
+      && neighbors(graph, n).filter(({ atom: m }) => isCarboxylCarbon(graph, m)).length >= 1
+    );
+}
+
+function isCarboxylAttachedToQuaternaryHydroxyCarbon(graph, atom) {
+  if (!isCarboxylCarbon(graph, atom)) return false;
+  return neighbors(graph, atom).some(({ atom: n }) =>
+    n.element === "C"
+    && n.hydrogens === 0
+    && neighbors(graph, n).some(({ atom: m }) => m.element === "O")
+      && neighbors(graph, n).filter(({ atom: m }) => isCarboxylCarbon(graph, m)).length >= 2
+  );
+}
+
+function isQuaternaryHydroxyCarboxylCarbon(graph, atom) {
+  return atom.element === "C"
+    && atom.hydrogens === 0
+    && neighbors(graph, atom).some(({ atom: n }) => n.element === "O")
+    && neighbors(graph, atom).some(({ atom: n }) => isCarboxylCarbon(graph, n));
 }
 
 function isAmideNitrogen(graph, atom) {
@@ -986,13 +1091,27 @@ function baseCarbonShift(graph, atom) {
   if (isCarbonylCarbon(graph, atom)) {
     if (isAmideCarbonylCarbon(graph, atom)) return { ppm: 170, label: "amide carbonyl base range 165-180" };
     if (isCarboxylCarbon(graph, atom)) {
+      const alphaCarbon = neighbors(graph, atom).find(({ atom: n }) => n.element === "C" && !isCarbonylCarbon(graph, n))?.atom || null;
       const aryl = neighbors(graph, atom).some(({ atom: n }) => n.aromatic);
       const ester = neighbors(graph, atom).some(({ atom: n }) => n.element === "O" && neighbors(graph, n).some(({ atom: m }) => m.element === "C" && !isCarbonylCarbon(graph, m)));
-      return { ppm: aryl ? 166 : ester ? 170 : 174, label: ester ? "ester carbonyl base range 165-175" : aryl ? "aryl carboxylic acid carbonyl calibrated near 166" : "carboxylic acid carbonyl base range 170-180" };
+      if (ester) return { ppm: 170, label: "ester carbonyl base range 165-175" };
+      if (isCarboxylAttachedToQuaternaryHydroxyCarbon(graph, atom)) {
+        return { ppm: 182.0, label: "tertiary hydroxy-tricarboxylate carbonyl teaching range" };
+      }
+      if (alphaCarbon && isAlphaAminoCarboxylCarbon(graph, alphaCarbon)) {
+        return { ppm: 177.5, label: "carboxyl/carboxylate carbonyl alpha to amino-substituted carbon" };
+      }
+      if (alphaCarbon && isAlphaHydroxyCarboxylCarbon(graph, alphaCarbon)) {
+        return { ppm: 184.0, label: "carboxyl/carboxylate carbonyl alpha to hydroxy-substituted carbon" };
+      }
+      if (alphaCarbon && isBenzylicCarbon(graph, alphaCarbon)) {
+        return { ppm: 183.0, label: "benzylic carboxyl/carboxylate carbonyl teaching range" };
+      }
+      return { ppm: aryl ? 183.0 : 184.0, label: aryl ? "aryl carboxylic acid carbonyl teaching range" : "carboxylic acid/carboxylate carbonyl teaching range" };
     }
     if (atom.hydrogens > 0) return { ppm: 198, label: "aldehyde carbonyl base range 190-205" };
     const conjugated = neighbors(graph, atom).some(({ atom: n }) => n.aromatic || isAlkeneCarbon(graph, n));
-    return { ppm: conjugated ? 195 : 210, label: conjugated ? "conjugated ketone carbonyl base range 185-205" : "ketone carbonyl base range 205-220" };
+    return { ppm: conjugated ? 197 : 218, label: conjugated ? "conjugated ketone carbonyl base range 190-205" : "ketone carbonyl base range 205-220" };
   }
   if (atom.aromatic) return { ppm: 128, label: "aromatic sp2 base range 120-145" };
   if (isNitrileCarbon(graph, atom)) return { ppm: 118, label: "nitrile carbon base range 110-125" };
@@ -1018,10 +1137,55 @@ function baseCarbonShift(graph, atom) {
     return { ppm: atom.hydrogens >= 3 ? 51.5 : 61.0, label: "alkoxy ester carbon base range" };
   }
   if (isAcylMethylCarbon(graph, atom)) {
-    return { ppm: 20.7, label: "acetyl methyl carbon base range" };
+    const carbonylNeighbor = neighbors(graph, atom).find(({ atom: n }) => isCarbonylCarbon(graph, n))?.atom || null;
+    if (carbonylNeighbor && isCarboxylCarbon(graph, carbonylNeighbor)) {
+      return { ppm: 26.0, label: "methyl alpha to carboxylic acid/carboxylate teaching range" };
+    }
+    return { ppm: 33.0, label: "methyl alpha to ketone carbonyl teaching range" };
   }
   if (isBetaToEsterOAlkylCarbon(graph, atom)) {
     return { ppm: 14.1, label: "ethyl ester terminal methyl carbon base range" };
+  }
+  if (isBranchedAlphaAminoCarboxylCarbon(graph, atom)) {
+    return { ppm: 63.0, label: "branched alpha carbon attached to amino and carboxylate groups" };
+  }
+  if (hasAdditionalCarboxylSidechain(graph, atom)) {
+    return { ppm: 57.5, label: "alpha amino-carboxyl carbon with additional nearby carboxylate" };
+  }
+  if (isAlphaAminoCarboxylCarbon(graph, atom)) {
+    return { ppm: 53.5, label: "alpha carbon attached to amino and carboxylate groups" };
+  }
+  if (isQuaternaryHydroxyCarboxylCarbon(graph, atom)) {
+    return { ppm: 78.0, label: "quaternary hydroxy carbon attached to carboxylate-bearing framework" };
+  }
+  if (isAlphaHydroxyCarboxylCarbon(graph, atom)) {
+    if (neighbors(graph, atom).filter(({ atom: n }) => isCarboxylCarbon(graph, n)).length >= 2) {
+      return { ppm: 78.0, label: "tertiary hydroxy carbon attached to two carboxylate groups" };
+    }
+    return { ppm: 71.5, label: "alpha hydroxy carbon adjacent to carboxylate" };
+  }
+  if (isBenzylicCarboxyCarbon(graph, atom)) {
+    return { ppm: 47.0, label: "benzylic CH2 alpha to carboxylate" };
+  }
+  if (isBridgeMethyleneBetweenCarboxylAndTertiaryCO(graph, atom)) {
+    return { ppm: 48.0, label: "bridge CH2 next to carboxylate and tertiary C-O center" };
+  }
+  if (isHydroxyDicarboxylicMethylene(graph, atom)) {
+    return { ppm: 45.0, label: "CH2 between carboxylate and hydroxy-bearing carbon" };
+  }
+  if (isDicarboxylicMethylene(graph, atom)) {
+    return { ppm: 36.5, label: "dicarboxylic methylene teaching range" };
+  }
+  if (isAlphaToCarboxylCarbon(graph, atom) && atom.hydrogens === 2) {
+    return { ppm: 36.5, label: "CH2 alpha to carboxylate teaching range" };
+  }
+  if (isBetaToAlphaHeteroCarboxylCenter(graph, atom)) {
+    if (atom.hydrogens >= 3) {
+      return { ppm: 21.5, label: "beta methyl next to alpha hetero/carboxyl center" };
+    }
+    if (atom.hydrogens === 1 && carbonDegree(graph, atom) >= 3) {
+      return { ppm: 31.8, label: "branched beta carbon next to alpha hetero/carboxyl center" };
+    }
   }
   const polyhydroxyCarbon = polyhydroxyCarbonShift(graph, atom);
   if (polyhydroxyCarbon) return polyhydroxyCarbon;
@@ -1069,6 +1233,15 @@ function correctionForAtom(graph, atom, nucleus, context) {
     || isBetaToEsterOAlkylCarbon(graph, atom)
     || isNitrileCarbon(graph, atom)
     || isAcetalLikeCarbon(graph, atom)
+    || isAlphaAminoCarboxylCarbon(graph, atom)
+    || isAlphaHydroxyCarboxylCarbon(graph, atom)
+    || isBenzylicCarboxyCarbon(graph, atom)
+    || isBetaToAlphaHeteroCarboxylCenter(graph, atom)
+    || isQuaternaryHydroxyCarboxylCarbon(graph, atom)
+    || (isAlphaToCarboxylCarbon(graph, atom) && atom.hydrogens === 2)
+    || isDicarboxylicMethylene(graph, atom)
+    || isHydroxyDicarboxylicMethylene(graph, atom)
+    || isBridgeMethyleneBetweenCarboxylAndTertiaryCO(graph, atom)
   )) {
     return { ppm: 0, labels: [] };
   }
