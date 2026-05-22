@@ -7,12 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260522b">
+  <link rel="stylesheet" href="styles.css?v=20260522c">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
   <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
   <script src="https://jsme-editor.github.io/dist/jsme/jsme.nocache.js"></script>
-  <script src="nmr-predictor.js?v=20260522b" defer></script>
+  <script src="nmr-predictor.js?v=20260522c" defer></script>
 </head>
 <body>
   <div class="page-shell">
@@ -40,15 +40,18 @@
           Paste a SMILES string or draw a structure to generate teaching-level 1H, 13C, HSQC, COSY, and NOESY spectra.
           <a href="notes.html">Heuristic notes</a> and <a href="#api">API access</a> are below.
         </p>
+        <div class="workbench-actions">
+          <a class="secondary-button hero-link-button" href="#api">CSV API</a>
+        </div>
       </div>
       <div class="workbench-tools">
-        <div class="hero-card-section">
+        <div class="hero-card-section hero-card-section-tight">
           <p class="hero-card-label">Pages Export</p>
           <code class="inline-code-block">index.html?smiles=CCO&amp;type=proton&amp;download=csv</code>
         </div>
-        <div class="hero-card-section">
+        <div class="hero-card-section hero-card-section-tight">
           <p class="hero-card-label">Examples</p>
-          <div class="chip-row">
+          <div class="chip-row chip-row-scroll">
             <button class="chip nmr-example" type="button" data-smiles="CCO">ethanol</button>
             <button class="chip nmr-example" type="button" data-smiles="CC(=O)O">acetic acid</button>
             <button class="chip nmr-example" type="button" data-smiles="CCOC(=O)C">ethyl acetate</button>
@@ -57,7 +60,6 @@
             <button class="chip nmr-example" type="button" data-smiles="C1CN2CC3=CCO[C@H]4CC(=O)N5[C@H]6[C@H]4[C@H]3C[C@H]2[C@@]61C7=CC=CC=C75">strychnine</button>
           </div>
         </div>
-        <a class="secondary-button hero-link-button" href="#api">CSV API</a>
       </div>
     </section>
 

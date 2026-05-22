@@ -2796,7 +2796,7 @@ function renderSpectrum(environments, type) {
     type: "scatter",
     mode: "text",
     text: labelItems.map((item) => item.text),
-    textfont: { color: "#18242d", size: 12 },
+    textfont: { color: "#e9f7ff", size: 12 },
     textposition: "top center",
     hoverinfo: "skip",
     name: "integrals"
@@ -2831,36 +2831,43 @@ function renderSpectrum(environments, type) {
     y: tmsHeight + 5,
     text: "TMS",
     showarrow: false,
-    font: { size: 11, color: "#56646f" },
+    font: { size: 11, color: "#9fb7c9" },
     yanchor: "bottom"
   }] : [];
   const layout = {
     autosize: true,
     margin: { t: 34, r: 22, b: 46, l: 42 },
     paper_bgcolor: "rgba(0,0,0,0)",
-    plot_bgcolor: "rgba(255,255,255,0.72)",
+    plot_bgcolor: "#0b1620",
     showlegend: false,
     dragmode: "zoom",
     shapes,
     annotations,
+    font: { color: "#dbeaf4" },
     title: {
       text: `${type === "carbon" ? "13C" : "1H"} predicted spectrum`,
       x: 0.02,
       xanchor: "left",
-      font: { size: 13, color: "#18242d" }
+      font: { size: 13, color: "#edf6fb" }
     },
     xaxis: {
       title: "Chemical shift (ppm)",
       autorange: false,
       range: [domain.max, domain.min],
-      gridcolor: "rgba(24,36,45,0.08)",
-      zeroline: false
+      gridcolor: "rgba(173, 217, 255, 0.12)",
+      tickfont: { color: "#c5d8e6" },
+      titlefont: { color: "#dbeaf4" },
+      zeroline: false,
+      linecolor: "rgba(173, 217, 255, 0.18)"
     },
     yaxis: {
       title: "Relative intensity",
       range: [0, 105],
-      gridcolor: "rgba(24,36,45,0.08)",
+      gridcolor: "rgba(173, 217, 255, 0.12)",
+      tickfont: { color: "#c5d8e6" },
+      titlefont: { color: "#dbeaf4" },
       zeroline: false,
+      linecolor: "rgba(173, 217, 255, 0.18)",
       fixedrange: true
     }
   };
@@ -2993,28 +3000,35 @@ function render2DSpectrum(peaks, type) {
     autosize: true,
     margin: { t: 34, r: 22, b: 46, l: 52 },
     paper_bgcolor: "rgba(0,0,0,0)",
-    plot_bgcolor: "rgba(255,255,255,0.72)",
+    plot_bgcolor: "#0b1620",
     showlegend: type === "cosy" || type === "noesy",
     dragmode: "zoom",
+    font: { color: "#dbeaf4" },
     title: {
       text: `${type.toUpperCase()} predicted map`,
       x: 0.02,
       xanchor: "left",
-      font: { size: 13, color: "#18242d" }
+      font: { size: 13, color: "#edf6fb" }
     },
     xaxis: {
       title: "1H shift (ppm)",
       autorange: "reversed",
       range: [domains.x.max, domains.x.min],
-      gridcolor: "rgba(24,36,45,0.08)",
-      zeroline: false
+      gridcolor: "rgba(173, 217, 255, 0.12)",
+      tickfont: { color: "#c5d8e6" },
+      titlefont: { color: "#dbeaf4" },
+      zeroline: false,
+      linecolor: "rgba(173, 217, 255, 0.18)"
     },
     yaxis: {
       title: yTitle,
       autorange: "reversed",
       range: [domains.y.max, domains.y.min],
-      gridcolor: "rgba(24,36,45,0.08)",
-      zeroline: false
+      gridcolor: "rgba(173, 217, 255, 0.12)",
+      tickfont: { color: "#c5d8e6" },
+      titlefont: { color: "#dbeaf4" },
+      zeroline: false,
+      linecolor: "rgba(173, 217, 255, 0.18)"
     }
   };
   const config = {

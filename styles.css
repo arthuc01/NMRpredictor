@@ -183,10 +183,10 @@ ul {
 
 .workbench-header {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.9fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
+  gap: 18px;
   align-items: start;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   overflow: hidden;
   position: relative;
 }
@@ -214,7 +214,7 @@ ul {
 
 .workbench-tools {
   display: grid;
-  gap: 16px;
+  gap: 10px;
   align-content: start;
 }
 
@@ -247,10 +247,10 @@ li,
 }
 
 .hero-copy {
-  margin-top: 14px;
+  margin-top: 12px;
   max-width: 62ch;
-  font-size: 0.98rem;
-  line-height: 1.6;
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
 .chip-row,
@@ -259,6 +259,12 @@ li,
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.workbench-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .hero-link-button {
@@ -280,14 +286,41 @@ li,
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.hero-card-section-tight + .hero-card-section-tight {
+  padding-top: 14px;
+}
+
+.chip-row-scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.chip-row-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.chip-row-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(143, 205, 240, 0.25);
+}
+
+.chip-row-scroll .chip {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 8px 13px;
+  white-space: nowrap;
+}
+
 .inline-code-block {
   display: block;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(13, 20, 27, 0.28);
   color: #d8f0ff;
-  font: 500 0.9rem "IBM Plex Mono", monospace;
+  font: 500 0.84rem "IBM Plex Mono", monospace;
   overflow-x: auto;
 }
 
@@ -499,6 +532,15 @@ output {
   overflow: hidden;
 }
 
+.plot-panel .panel-heading {
+  margin-bottom: 14px;
+}
+
+.plot-panel .panel-heading p {
+  max-width: 78ch;
+  font-size: 0.92rem;
+}
+
 .plot-area {
   min-height: min(560px, calc(100vh - 220px));
   height: var(--plot-height, 560px);
@@ -510,6 +552,11 @@ output {
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.plot-toolbar .chip {
+  min-height: 36px;
+  padding: 8px 13px;
 }
 
 .plot-svg {
@@ -630,12 +677,20 @@ output {
   min-height: 140px;
   display: grid;
   place-items: center;
+  padding: 12px;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 55%),
+    linear-gradient(180deg, rgba(13, 21, 29, 0.98), rgba(11, 18, 25, 0.98));
 }
 
 .nmrp-structure svg {
-  width: min(68%, 260px);
+  width: min(78%, 270px);
   height: auto;
   max-height: 150px;
+  border-radius: 18px;
+  background: #f7fbff;
+  padding: 10px;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.26);
 }
 
 .nmrp-visual-grid {
@@ -665,12 +720,16 @@ output {
   min-height: 380px;
   height: clamp(380px, calc(100vh - 320px), 520px);
   cursor: crosshair;
+  background:
+    linear-gradient(180deg, rgba(8, 18, 28, 0.98), rgba(10, 22, 32, 0.98)),
+    radial-gradient(circle at top, rgba(47, 192, 255, 0.08), transparent 48%);
+  border-color: rgba(143, 205, 240, 0.14);
 }
 
 .nmrp-spectrum-caption {
-  margin: 2px 0 10px;
+  margin: 2px 0 12px;
   font: 500 0.82rem "IBM Plex Mono", monospace;
-  color: #a9c1d1;
+  color: #c0d8e8;
 }
 
 .nmrp-spectrum-area .plot-svg {
@@ -835,6 +894,10 @@ li + li {
   .topbar,
   .panel {
     padding: 18px;
+  }
+
+  .workbench-actions {
+    margin-top: 14px;
   }
 
   h1 {
