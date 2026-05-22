@@ -107,7 +107,7 @@ function downloadBlob(blob, filename) {
   }
 }
 
-function autoDomainForSignals(signals, fallback) {
+function autoDomainForSignals(signals, fallback, options = {}) {
   const ppmValues = (signals || [])
     .map((signal) => Number(signal.ppm))
     .filter(Number.isFinite);
@@ -116,16 +116,29 @@ function autoDomainForSignals(signals, fallback) {
   }
   const minPpm = Math.min(...ppmValues);
   const maxPpm = Math.max(...ppmValues);
+  const span = Math.max(1, maxPpm - minPpm);
+  const lowerPadding = Math.max(options.minPadding ?? 1, span * (options.minPaddingRatio ?? 0.06));
+  const upperPadding = Math.max(options.maxPadding ?? 1, span * (options.maxPaddingRatio ?? 0.06));
   return {
-    min: minPpm < 0 ? Math.floor(minPpm) - 1 : 0,
-    max: Math.ceil(maxPpm) + 1
+    min: Math.floor((minPpm - lowerPadding) * 2) / 2,
+    max: Math.ceil((maxPpm + upperPadding) * 2) / 2
   };
 }
 
 function autoDefaultDomains(predictions) {
   return {
-    proton: autoDomainForSignals(predictions.proton, state.defaultDomains.proton),
-    carbon: autoDomainForSignals(predictions.carbon, state.defaultDomains.carbon)
+    proton: autoDomainForSignals(predictions.proton, state.defaultDomains.proton, {
+      minPadding: 0.35,
+      maxPadding: 0.65,
+      minPaddingRatio: 0.05,
+      maxPaddingRatio: 0.07
+    }),
+    carbon: autoDomainForSignals(predictions.carbon, state.defaultDomains.carbon, {
+      minPadding: 6,
+      maxPadding: 10,
+      minPaddingRatio: 0.08,
+      maxPaddingRatio: 0.1
+    })
   };
 }
 
