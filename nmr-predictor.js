@@ -2794,9 +2794,10 @@ function renderSpectrum(environments, type) {
     type: "scatter",
     mode: "markers",
     marker: {
-      color: [...visiblePeaks.map((peak) => state.selectedSignalIds.includes(peak.env.signalId) ? "#a11d37" : color), ...(showTms ? ["#56646f"] : [])],
-      size: [...visiblePeaks.map((peak) => state.selectedSignalIds.includes(peak.env.signalId) ? 11 : 7), ...(showTms ? [7] : [])],
-      line: { color: "#ffffff", width: 1 }
+      color: [...visiblePeaks.map((peak) => state.selectedSignalIds.includes(peak.env.signalId) ? "#a11d37" : color), ...(showTms ? ["#9fb7c9"] : [])],
+      size: [...visiblePeaks.map((peak) => state.selectedSignalIds.includes(peak.env.signalId) ? 14 : 12), ...(showTms ? [12] : [])],
+      opacity: 0,
+      line: { color: "rgba(0,0,0,0)", width: 0 }
     },
     customdata: [...visiblePeaks.map((peak) => peak.env.signalId), ...(showTms ? [""] : [])],
     text: [...visiblePeaks.map((peak) => `${peak.env.nucleus} ${peak.env.ppm.toFixed(2)} ppm (${peak.env.multiplicity})<br>Atoms ${peak.env.atomIds.join(", ")}<br>${multipletDetail(peak.env)}<br>${peak.env.label}`), ...(showTms ? ["TMS reference peak<br>0.00 ppm"] : [])],
