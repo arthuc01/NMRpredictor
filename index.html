@@ -29,31 +29,25 @@
         <a class="nav-link" href="multiplet.html">Multiplet</a>
         <a class="nav-link" href="notes.html">Notes</a>
       </nav>
-      <a class="utility-pill" href="README.md#api">API Docs</a>
+      <a class="utility-pill" href="#api">API Docs</a>
     </header>
 
-    <section class="hero">
-      <div>
+    <section class="workbench-header panel">
+      <div class="workbench-copy">
         <p class="eyebrow">Arthur Group : University of Bristol School of Chemistry</p>
-        <h1>NMR Spectra Predictor</h1>
+        <h1>NMR Predictor</h1>
         <p class="hero-copy">
-          Enter a SMILES string or draw a small molecule to generate teaching-level 1H, 13C, HSQC, COSY, and NOESY spectra.
-          The model is intentionally heuristic and designed for explaining trends, environments, and simple splitting logic rather than analytical assignment.
-          <a href="notes.html">Read the heuristic model notes.</a>
+          Paste a SMILES string or draw a structure to generate teaching-level 1H, 13C, HSQC, COSY, and NOESY spectra.
+          <a href="notes.html">Heuristic notes</a> and <a href="#api">API access</a> are below.
         </p>
-        <div class="hero-actions">
-          <a class="primary-button hero-link-button" href="#predictor-workbench">Open Workbench</a>
-          <a class="secondary-button hero-link-button" href="#api">See API</a>
-        </div>
       </div>
-      <aside class="hero-card hero-card-stack">
+      <div class="workbench-tools">
         <div class="hero-card-section">
-          <p class="hero-card-label">Quick API</p>
-          <p class="hero-card-copy">Return a spectrum CSV with a single GET request.</p>
-          <code class="inline-code-block">/api/spectrum?smiles=CCO&amp;type=proton</code>
+          <p class="hero-card-label">Pages Export</p>
+          <code class="inline-code-block">index.html?smiles=CCO&amp;type=proton&amp;download=csv</code>
         </div>
         <div class="hero-card-section">
-          <p class="hero-card-label">Example molecules</p>
+          <p class="hero-card-label">Examples</p>
           <div class="chip-row">
             <button class="chip nmr-example" type="button" data-smiles="CCO">ethanol</button>
             <button class="chip nmr-example" type="button" data-smiles="CC(=O)O">acetic acid</button>
@@ -63,29 +57,7 @@
             <button class="chip nmr-example" type="button" data-smiles="C1CN2CC3=CCO[C@H]4CC(=O)N5[C@H]6[C@H]4[C@H]3C[C@H]2[C@@]61C7=CC=CC=C75">strychnine</button>
           </div>
         </div>
-      </aside>
-    </section>
-
-    <section class="summary-grid dashboard-summary">
-      <div class="summary-card accent-coral">
-        <span class="summary-label">RDKit JS</span>
-        <strong id="nmrp-rdkit-summary">loading</strong>
-        <span class="summary-meta">structure renderer</span>
-      </div>
-      <div class="summary-card accent-emerald">
-        <span class="summary-label">1H Environments</span>
-        <strong id="nmrp-proton-summary">-</strong>
-        <span class="summary-meta">predicted proton groups</span>
-      </div>
-      <div class="summary-card accent-gold">
-        <span class="summary-label">13C Environments</span>
-        <strong id="nmrp-carbon-summary">-</strong>
-        <span class="summary-meta">predicted carbon groups</span>
-      </div>
-      <div class="summary-card accent-violet">
-        <span class="summary-label">2D Peaks</span>
-        <strong><span id="nmrp-hsqc-summary">-</span> / <span id="nmrp-cosy-summary">-</span> / <span id="nmrp-noesy-summary">-</span></strong>
-        <span class="summary-meta">HSQC / COSY / NOESY</span>
+        <a class="secondary-button hero-link-button" href="#api">CSV API</a>
       </div>
     </section>
 
@@ -150,6 +122,29 @@
       </section>
     </main>
 
+    <section class="summary-grid dashboard-summary">
+      <div class="summary-card accent-coral">
+        <span class="summary-label">RDKit JS</span>
+        <strong id="nmrp-rdkit-summary">loading</strong>
+        <span class="summary-meta">structure renderer</span>
+      </div>
+      <div class="summary-card accent-emerald">
+        <span class="summary-label">1H Environments</span>
+        <strong id="nmrp-proton-summary">-</strong>
+        <span class="summary-meta">predicted proton groups</span>
+      </div>
+      <div class="summary-card accent-gold">
+        <span class="summary-label">13C Environments</span>
+        <strong id="nmrp-carbon-summary">-</strong>
+        <span class="summary-meta">predicted carbon groups</span>
+      </div>
+      <div class="summary-card accent-violet">
+        <span class="summary-label">2D Peaks</span>
+        <strong><span id="nmrp-hsqc-summary">-</span> / <span id="nmrp-cosy-summary">-</span> / <span id="nmrp-noesy-summary">-</span></strong>
+        <span class="summary-meta">HSQC / COSY / NOESY</span>
+      </div>
+    </section>
+
     <section class="panel table-panel">
       <div class="panel-heading">
         <h2>Environment Assignments</h2>
@@ -175,11 +170,16 @@
     <section id="api" class="panel api-panel">
       <div class="panel-heading">
         <h2>CSV API</h2>
-        <p>Run the local Node API to return a CSV directly from a SMILES string and spectrum type.</p>
+        <p>Use GitHub Pages for browser-side CSV export, or run the local Node endpoint for direct HTTP CSV responses.</p>
       </div>
       <div class="api-grid">
         <div class="api-card">
-          <span class="api-card-label">Endpoint</span>
+          <span class="api-card-label">GitHub Pages</span>
+          <code class="inline-code-block">index.html?smiles=CCO&amp;type=proton&amp;download=csv</code>
+          <p class="api-copy">Loads the static predictor, applies the query parameters in the browser, and automatically downloads the selected spectrum as CSV.</p>
+        </div>
+        <div class="api-card">
+          <span class="api-card-label">Node Endpoint</span>
           <code class="inline-code-block">GET /api/spectrum?smiles=CCO&amp;type=proton</code>
           <p class="api-copy">Supported types: <code>proton</code>, <code>carbon</code>, <code>hsqc</code>, <code>cosy</code>, <code>noesy</code>.</p>
         </div>

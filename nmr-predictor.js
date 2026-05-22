@@ -3850,6 +3850,38 @@ function initialiseRdkit() {
     });
 }
 
+function readLaunchParams() {
+  const params = new URLSearchParams(window.location.search);
+  const smiles = params.get("smiles")?.trim() || "";
+  const type = params.get("type")?.trim().toLowerCase() || "";
+  const download = params.get("download")?.trim().toLowerCase() || "";
+  return {
+    smiles,
+    type: ["proton", "carbon", "hsqc", "cosy", "noesy"].includes(type) ? type : "",
+    shouldDownloadCsv: download === "csv"
+  };
+}
+
+async function applyLaunchParams() {
+  const launch = readLaunchParams();
+  if (!launch.smiles) {
+    return;
+  }
+  NMRP.smiles.value = launch.smiles;
+  sendSmilesToJsme();
+  await predictNmr();
+  if (!state.predictions) {
+    return;
+  }
+  if (launch.type) {
+    state.activeSpectrum = launch.type;
+    renderActiveSpectrum();
+  }
+  if (launch.shouldDownloadCsv) {
+    exportActiveSpectrumCsv();
+  }
+}
+
 NMRP.predict.addEventListener("click", predictNmr);
 NMRP.draw.addEventListener("click", sendSmilesToJsme);
 NMRP.smiles.addEventListener("keydown", (event) => {
@@ -3905,6 +3937,11 @@ if (document.addEventListener) {
 
 window.addEventListener("load", () => {
   initialiseJsme();
-  initialiseRdkit().then(predictNmr);
+  initialiseRdkit().then(() => {
+    if (readLaunchParams().smiles) {
+      return applyLaunchParams();
+    }
+    return predictNmr();
+  });
   updateFullscreenButtonLabel();
 });

@@ -25,7 +25,43 @@ Open `index.html` directly in a browser, or serve the repository with any static
 
 ## API
 
-The repository includes a small Node HTTP API that returns CSV output directly from the same predictor logic used by the browser UI.
+The repository exposes two ways to drive CSV export from a SMILES string:
+
+- a GitHub Pages browser workflow based on query parameters
+- a local Node HTTP API that returns raw CSV directly
+
+### GitHub Pages browser API
+
+GitHub Pages cannot run the Node server in this repo, but it can still trigger prediction and CSV download in the browser.
+
+Pattern:
+
+```text
+https://arthuc01.github.io/NMRpredictor/index.html?smiles=<SMILES>&type=<TYPE>&download=csv
+```
+
+Example:
+
+```text
+https://arthuc01.github.io/NMRpredictor/index.html?smiles=CCO&type=proton&download=csv
+```
+
+Supported `type` values:
+
+- `proton`
+- `carbon`
+- `hsqc`
+- `cosy`
+- `noesy`
+
+Notes:
+
+- This launches the predictor UI, applies the query parameters client-side, and downloads the active spectrum as CSV.
+- It is a browser-side export route, not a raw HTTP CSV endpoint.
+
+### Node API
+
+The repository also includes a small Node HTTP API that returns CSV output directly from the same predictor logic used by the browser UI.
 
 Start it with:
 
