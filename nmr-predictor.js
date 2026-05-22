@@ -45,7 +45,6 @@ const state = {
   rdkit: null,
   viewer3d: null,
   jsme: null,
-  jsmePlaceholder: null,
   activeSpectrum: "proton",
   selectedSignalId: null,
   selectedSignalIds: [],
@@ -2529,36 +2528,6 @@ function refreshResizableViews() {
   state.viewer3d?.render?.();
 }
 
-function syncFullscreenSupplementaryView() {
-  const jsmeContainer = document.getElementById("jsme-container");
-  if (!jsmeContainer || !NMRP.structure) {
-    return;
-  }
-  if (isSpectrumFullscreen()) {
-    if (!state.jsmePlaceholder) {
-      state.jsmePlaceholder = document.createComment("jsme-home");
-      jsmeContainer.parentNode?.insertBefore(state.jsmePlaceholder, jsmeContainer);
-    }
-    if (jsmeContainer.parentNode !== NMRP.structure) {
-      NMRP.structure.innerHTML = "";
-      NMRP.structure.classList.add("is-fullscreen-jsme");
-      NMRP.structure.appendChild(jsmeContainer);
-    }
-  } else {
-    if (state.jsmePlaceholder?.parentNode && jsmeContainer.parentNode !== state.jsmePlaceholder.parentNode) {
-      state.jsmePlaceholder.parentNode.insertBefore(jsmeContainer, state.jsmePlaceholder);
-    }
-    state.jsmePlaceholder?.parentNode?.removeChild(state.jsmePlaceholder);
-    state.jsmePlaceholder = null;
-    NMRP.structure.classList.remove("is-fullscreen-jsme");
-    if (state.graph && state.lastSmiles) {
-      tryRenderRdkit(state.lastSmiles);
-    } else {
-      NMRP.structure.innerHTML = '<div class="plot-empty">Predict a molecule to view the 2D structure.</div>';
-    }
-  }
-}
-
 function updateFullscreenButtonLabel() {
   if (!NMRP.fullscreen) return;
   NMRP.fullscreen.textContent = isSpectrumFullscreen() ? "Exit Full Screen" : "Full Screen";
@@ -3985,12 +3954,10 @@ document.querySelectorAll(".nmr-example").forEach((button) => {
 window.addEventListener("resize", renderActiveSpectrum);
 if (document.addEventListener) {
   document.addEventListener("fullscreenchange", () => {
-    syncFullscreenSupplementaryView();
     updateFullscreenButtonLabel();
     window.setTimeout(refreshResizableViews, 40);
   });
   document.addEventListener("webkitfullscreenchange", () => {
-    syncFullscreenSupplementaryView();
     updateFullscreenButtonLabel();
     window.setTimeout(refreshResizableViews, 40);
   });
