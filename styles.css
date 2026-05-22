@@ -706,6 +706,13 @@ output {
   overflow: hidden;
 }
 
+.jsme-fullscreen-container,
+.jsme-fullscreen-container > div,
+.jsme-fullscreen-container table {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 .nmrp-visual-grid {
   display: grid;
   grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);

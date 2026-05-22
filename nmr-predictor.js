@@ -2527,6 +2527,9 @@ function refreshResizableViews() {
   window.Plotly?.Plots?.resize?.(NMRP.spectrum);
   state.viewer3d?.resize?.();
   state.viewer3d?.render?.();
+  if (isSpectrumFullscreen()) {
+    state.jsmeFullscreen?.setSize?.("100%", "100%");
+  }
 }
 
 function syncFullscreenSupplementaryView() {
@@ -2570,6 +2573,7 @@ function syncFullscreenSupplementaryView() {
       }
     }
     state.jsmeFullscreen?.setSize?.("100%", "100%");
+    window.setTimeout(() => state.jsmeFullscreen?.setSize?.("100%", "100%"), 80);
   } else {
     state.jsmeFullscreen = null;
     NMRP.structure.classList.remove("is-fullscreen-jsme");
