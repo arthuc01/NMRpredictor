@@ -45,7 +45,7 @@ const state = {
   rdkit: null,
   viewer3d: null,
   jsme: null,
-  jsmePlaceholder: null,
+  jsmeFullscreen: null,
   activeSpectrum: "proton",
   selectedSignalId: null,
   selectedSignalIds: [],
@@ -2530,29 +2530,49 @@ function refreshResizableViews() {
 }
 
 function syncFullscreenSupplementaryView() {
-  const jsmeContainer = document.getElementById("jsme-container");
-  if (!jsmeContainer || !NMRP.structure) {
+  if (!NMRP.structure) {
     return;
   }
   if (isSpectrumFullscreen()) {
-    if (!state.jsmePlaceholder) {
-      state.jsmePlaceholder = document.createComment("jsme-home");
-      jsmeContainer.parentNode?.insertBefore(state.jsmePlaceholder, jsmeContainer);
+    NMRP.structure.classList.add("is-fullscreen-jsme");
+    if (!document.getElementById("jsme-fullscreen-container")) {
+      NMRP.structure.innerHTML = '<div id="jsme-fullscreen-container" class="jsme-fullscreen-container"></div>';
     }
-    if (jsmeContainer.parentNode !== NMRP.structure) {
-      NMRP.structure.innerHTML = "";
-      NMRP.structure.classList.add("is-fullscreen-jsme");
-      NMRP.structure.appendChild(jsmeContainer);
+    const fullscreenContainer = document.getElementById("jsme-fullscreen-container");
+    if (!window.JSApplet?.JSME || !fullscreenContainer) {
+      NMRP.structure.innerHTML = '<div class="plot-empty">JSME did not load. Use the main editor outside fullscreen.</div>';
+      return;
     }
-    state.jsme?.setSize?.("100%", "100%");
+    if (!state.jsmeFullscreen) {
+      state.jsmeFullscreen = new window.JSApplet.JSME("jsme-fullscreen-container", "100%", "100%", {
+        options: "oldlook,star"
+      });
+      if (state.jsmeFullscreen.setCallBack) {
+        state.jsmeFullscreen.setCallBack("AfterStructureModified", () => {
+          const smiles = state.jsmeFullscreen?.smiles?.();
+          if (!smiles) return;
+          NMRP.smiles.value = smiles;
+          if (state.jsme?.readGenericMolecularInput) {
+            state.jsme.readGenericMolecularInput(smiles);
+          } else if (state.jsme?.readMolecule) {
+            state.jsme.readMolecule(smiles);
+          }
+          predictNmr();
+        });
+      }
+    }
+    const smiles = NMRP.smiles.value.trim();
+    if (smiles) {
+      if (state.jsmeFullscreen.readGenericMolecularInput) {
+        state.jsmeFullscreen.readGenericMolecularInput(smiles);
+      } else if (state.jsmeFullscreen.readMolecule) {
+        state.jsmeFullscreen.readMolecule(smiles);
+      }
+    }
+    state.jsmeFullscreen?.setSize?.("100%", "100%");
   } else {
-    if (state.jsmePlaceholder?.parentNode && jsmeContainer.parentNode !== state.jsmePlaceholder.parentNode) {
-      state.jsmePlaceholder.parentNode.insertBefore(jsmeContainer, state.jsmePlaceholder);
-    }
-    state.jsmePlaceholder?.parentNode?.removeChild(state.jsmePlaceholder);
-    state.jsmePlaceholder = null;
+    state.jsmeFullscreen = null;
     NMRP.structure.classList.remove("is-fullscreen-jsme");
-    state.jsme?.setSize?.("100%", "360px");
     if (state.graph && state.lastSmiles) {
       tryRenderRdkit(state.lastSmiles);
     } else {
@@ -3653,6 +3673,9 @@ function renderActiveSpectrum() {
 }
 
 function tryRenderRdkit(smiles) {
+  if (NMRP.structure.classList.contains("is-fullscreen-jsme")) {
+    return;
+  }
   if (!state.rdkit) {
     NMRP.structure.innerHTML = '<div class="plot-empty">RDKit structure rendering unavailable. Prediction still uses the SMILES graph.</div>';
     return;
