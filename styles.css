@@ -271,6 +271,12 @@ li,
   text-decoration: none;
 }
 
+.hero-card-copy {
+  margin-top: 14px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
 .hero-card-label,
 .api-card-label {
   display: block;
@@ -668,6 +674,68 @@ output {
   height: var(--nmr-spectrum-height, 320px);
 }
 
+.multiplet-page .hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.9fr);
+  gap: 22px;
+  align-items: stretch;
+  margin-bottom: 22px;
+}
+
+.multiplet-page .hero > div:first-child,
+.multiplet-page .hero-card {
+  padding: 26px 28px;
+  border-radius: var(--radius);
+  border: 1px solid var(--panel-border);
+  background: linear-gradient(180deg, rgba(43, 59, 73, 0.96), rgba(38, 53, 67, 0.92));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.multiplet-page .hero > div:first-child {
+  position: relative;
+  overflow: hidden;
+}
+
+.multiplet-page .hero > div:first-child::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -40% auto;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(24, 212, 123, 0.18), transparent 65%);
+  pointer-events: none;
+}
+
+.multiplet-page .hero-card {
+  display: grid;
+  align-content: center;
+}
+
+.multiplet-page .hero-card .chip-row {
+  justify-content: flex-start;
+}
+
+.multiplet-page .multiplet-preset {
+  min-height: 40px;
+}
+
+.multiplet-page .plot-area,
+.multiplet-page .tree-area {
+  border-color: rgba(16, 31, 44, 0.12);
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(16, 31, 44, 0.02);
+}
+
+.multiplet-page .plot-empty {
+  color: #5d6b77;
+}
+
+.multiplet-page .nmr-subtitle {
+  color: #f2f6fa;
+}
+
 .jsme-container {
   min-height: 360px;
   margin: 14px 0 18px;
@@ -849,6 +917,7 @@ li + li {
 }
 
 @media (max-width: 1180px) {
+  .multiplet-page .hero,
   .workbench-header,
   .app-grid,
   .api-grid,
@@ -869,6 +938,10 @@ li + li {
 
   .page-nav {
     justify-content: flex-start;
+  }
+
+  .multiplet-page .hero {
+    grid-template-columns: 1fr;
   }
 
   .nmr-layer-row {
@@ -903,6 +976,11 @@ li + li {
   h1 {
     max-width: none;
     font-size: 2rem;
+  }
+
+  .multiplet-page .hero > div:first-child,
+  .multiplet-page .hero-card {
+    padding: 18px;
   }
 
   .plot-area {

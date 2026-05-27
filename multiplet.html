@@ -7,10 +7,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260522b">
-  <script src="nmr.js?v=20260522b" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20260527a">
+  <script src="nmr.js?v=20260527a" defer></script>
 </head>
-<body>
+<body class="multiplet-page">
   <div class="page-shell">
     <header class="topbar">
       <div class="brand-block">
@@ -37,13 +37,14 @@
         </p>
       </div>
       <div class="hero-card">
-        <p class="hero-card-label">Supported Layers</p>
+        <p class="hero-card-label">Quick Presets</p>
         <div class="chip-row">
-          <span class="chip">Doublet</span>
-          <span class="chip">Triplet</span>
-          <span class="chip">Quartet</span>
-          <span class="chip">Up to 4 levels</span>
+          <button class="chip multiplet-preset" type="button" data-preset="doublet">Doublet</button>
+          <button class="chip multiplet-preset" type="button" data-preset="triplet">Triplet</button>
+          <button class="chip multiplet-preset" type="button" data-preset="quartet">Quartet</button>
+          <button class="chip multiplet-preset" type="button" data-preset="four-level">4 Levels</button>
         </div>
+        <p class="hero-card-copy">Apply common splitting setups instantly, then fine-tune J values and linewidth below.</p>
       </div>
     </header>
 

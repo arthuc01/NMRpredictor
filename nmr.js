@@ -34,6 +34,7 @@ const elements = {
   showCentersToggle: document.getElementById("show-centers-toggle"),
   multipletSelects: Array.from(document.querySelectorAll(".nmr-multiplet")),
   jInputs: Array.from(document.querySelectorAll(".nmr-j")),
+  presetButtons: Array.from(document.querySelectorAll(".multiplet-preset")),
   predictButton: document.getElementById("predict-button"),
   status: document.getElementById("nmr-status"),
   summaryMultiplet: document.getElementById("summary-multiplet"),
@@ -42,6 +43,33 @@ const elements = {
   summarySpread: document.getElementById("summary-spread"),
   spectrum: document.getElementById("nmr-spectrum"),
   tree: document.getElementById("nmr-tree")
+};
+
+const PRESETS = {
+  doublet: [
+    { type: "d", j: 10.0 },
+    { type: "none", j: 0 },
+    { type: "none", j: 0 },
+    { type: "none", j: 0 }
+  ],
+  triplet: [
+    { type: "t", j: 7.0 },
+    { type: "none", j: 0 },
+    { type: "none", j: 0 },
+    { type: "none", j: 0 }
+  ],
+  quartet: [
+    { type: "q", j: 7.0 },
+    { type: "none", j: 0 },
+    { type: "none", j: 0 },
+    { type: "none", j: 0 }
+  ],
+  "four-level": [
+    { type: "d", j: 10.0 },
+    { type: "t", j: 7.0 },
+    { type: "d", j: 2.0 },
+    { type: "q", j: 1.0 }
+  ]
 };
 
 function setStatus(message, isError = false) {
@@ -221,15 +249,15 @@ function renderSpectrum(lines, profile, centerPpm, frequencyMHz) {
   const xTicks = Array.from({ length: 7 }, (_, i) => {
     const ppm = minX + ((maxX - minX) * i / 6);
     const x = margin.left + (plotWidth * (1 - i / 6));
-    return `<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + plotHeight}" stroke="rgba(24,36,45,0.08)"></line><text x="${x}" y="${height - 14}" text-anchor="middle" font-size="11" fill="#56646f">${ppm.toFixed(3)}</text>`;
+    return `<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + plotHeight}" stroke="#e7edf2"></line><text x="${x}" y="${height - 14}" text-anchor="middle" font-size="11" fill="#26323a">${ppm.toFixed(3)}</text>`;
   }).join("");
 
   const yTicks = [0, 25, 50, 75, 100].map((value) => {
     const y = yToPx(value);
-    return `<line x1="${margin.left}" y1="${y}" x2="${margin.left + plotWidth}" y2="${y}" stroke="rgba(24,36,45,0.08)"></line><text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#56646f">${value}</text>`;
+    return `<line x1="${margin.left}" y1="${y}" x2="${margin.left + plotWidth}" y2="${y}" stroke="#e7edf2"></line><text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#26323a">${value}</text>`;
   }).join("");
 
-  elements.spectrum.innerHTML = `<svg class="plot-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><rect x="${margin.left}" y="${margin.top}" width="${plotWidth}" height="${plotHeight}" fill="rgba(255,255,255,0.72)" rx="14"></rect>${xTicks}${yTicks}<line x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${margin.left + plotWidth}" y2="${margin.top + plotHeight}" stroke="#23343f"></line><line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + plotHeight}" stroke="#23343f"></line><polygon points="${profileFilled}" fill="rgba(13, 108, 116, 0.16)"></polygon><polyline points="${profilePoints}" fill="none" stroke="#0d6c74" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"></polyline>${sticks}<text x="${margin.left + plotWidth / 2}" y="${height - 2}" text-anchor="middle" font-size="12" fill="#18242d">Chemical shift (ppm)</text><text x="18" y="${margin.top + plotHeight / 2}" text-anchor="middle" font-size="12" fill="#18242d" transform="rotate(-90 18 ${margin.top + plotHeight / 2})">Relative intensity</text></svg>`;
+  elements.spectrum.innerHTML = `<svg class="plot-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><rect x="${margin.left}" y="${margin.top}" width="${plotWidth}" height="${plotHeight}" fill="#ffffff" rx="14"></rect>${xTicks}${yTicks}<line x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${margin.left + plotWidth}" y2="${margin.top + plotHeight}" stroke="#23343f"></line><line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + plotHeight}" stroke="#23343f"></line><polygon points="${profileFilled}" fill="rgba(13, 108, 116, 0.12)"></polygon><polyline points="${profilePoints}" fill="none" stroke="#0d6c74" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"></polyline>${sticks}<text x="${margin.left + plotWidth / 2}" y="${height - 2}" text-anchor="middle" font-size="12" fill="#18242d">Chemical shift (ppm)</text><text x="18" y="${margin.top + plotHeight / 2}" text-anchor="middle" font-size="12" fill="#18242d" transform="rotate(-90 18 ${margin.top + plotHeight / 2})">Relative intensity</text></svg>`;
 }
 
 function renderTree(nodes, edges, layers, centerPpm, frequencyMHz) {
@@ -294,10 +322,10 @@ function renderTree(nodes, edges, layers, centerPpm, frequencyMHz) {
   const levelLabels = layers.map((layer, i) => {
     const y = yToPx(i + 1) - 10;
     const text = `L${layer.index}: ${MULTIPLETS[layer.type].short}, J=${layer.j.toFixed(2)} Hz`;
-    return `<text x="${margin.left + 6}" y="${y.toFixed(2)}" font-size="11" fill="#355a62">${text}</text>`;
+    return `<text x="${margin.left + 6}" y="${y.toFixed(2)}" font-size="11" fill="#2f4550">${text}</text>`;
   }).join("");
 
-  elements.tree.innerHTML = `<svg class="tree-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><rect x="${margin.left}" y="${margin.top - 18}" width="${plotWidth}" height="${(treeBottom - margin.top) + 30}" rx="14" fill="rgba(255,255,255,0.62)" stroke="rgba(24,36,45,0.08)"></rect>${edgeMarkup}${joinTickMarkup}${levelLabels}<text x="${margin.left + plotWidth / 2}" y="${height - 6}" text-anchor="middle" font-size="12" fill="#18242d">Offset from center (Hz)</text></svg>`;
+  elements.tree.innerHTML = `<svg class="tree-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><rect x="${margin.left}" y="${margin.top - 18}" width="${plotWidth}" height="${(treeBottom - margin.top) + 30}" rx="14" fill="#ffffff" stroke="#e7edf2"></rect>${edgeMarkup}${joinTickMarkup}${levelLabels}<text x="${margin.left + plotWidth / 2}" y="${height - 6}" text-anchor="middle" font-size="12" fill="#18242d">Offset from center (Hz)</text></svg>`;
 }
 
 function predict() {
@@ -351,6 +379,18 @@ function predict() {
   }
 }
 
+function applyPreset(name) {
+  const preset = PRESETS[name];
+  if (!preset) {
+    return;
+  }
+  preset.forEach((layer, index) => {
+    elements.multipletSelects[index].value = layer.type;
+    elements.jInputs[index].value = String(layer.j);
+  });
+  predict();
+}
+
 function bindEvents() {
   elements.linewidth.addEventListener("input", () => {
     elements.linewidthOutput.value = `${Number(elements.linewidth.value).toFixed(1)} Hz`;
@@ -362,6 +402,9 @@ function bindEvents() {
   elements.showCentersToggle.addEventListener("change", predict);
   elements.multipletSelects.forEach((select) => select.addEventListener("change", predict));
   elements.jInputs.forEach((input) => input.addEventListener("change", predict));
+  elements.presetButtons.forEach((button) => {
+    button.addEventListener("click", () => applyPreset(button.dataset.preset));
+  });
   window.addEventListener("resize", () => {
     if (state.layers.length) {
       predict();
