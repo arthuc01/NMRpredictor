@@ -1,4 +1,6 @@
 const { loadPredictorContext } = require("../lib/load-predictor-context");
+const PptxGenJS = require("pptxgenjs");
+const { buildPresentationFile } = require("../pptx-export");
 
 const SUPPORTED_TYPES = new Set(["proton", "carbon", "hsqc", "cosy", "noesy"]);
 
@@ -202,6 +204,22 @@ function generateSpectrumCsv({ smiles, type }) {
 module.exports = {
   SUPPORTED_TYPES,
   buildPredictions,
+  build2dCsv,
+  build1dCsv,
+  generateSpectrumPresentation: async function generateSpectrumPresentation({ smiles }) {
+    const cleanSmiles = String(smiles || "").trim();
+    if (!cleanSmiles) {
+      throw new Error("Missing required 'smiles' parameter.");
+    }
+    const { ctx, graph, predictions } = buildPredictions(cleanSmiles);
+    return buildPresentationFile(PptxGenJS, ctx, {
+      smiles: cleanSmiles,
+      graph,
+      predictions
+    }, {
+      outputType: "nodebuffer"
+    });
+  },
   generateSpectrumCsv,
   normalizeType
 };

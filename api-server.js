@@ -1,6 +1,6 @@
 const http = require("node:http");
 const { URL } = require("node:url");
-const { SUPPORTED_TYPES, generateSpectrumCsv } = require("./api/predictor-service");
+const { SUPPORTED_TYPES, generateSpectrumCsv, generateSpectrumPresentation } = require("./api/predictor-service");
 
 const port = Number(process.env.PORT || 3000);
 
@@ -20,6 +20,16 @@ function sendCsv(res, payload) {
     "Access-Control-Allow-Origin": "*"
   });
   res.end(payload.csv);
+}
+
+function sendPptx(res, payload) {
+  res.writeHead(200, {
+    "Content-Type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "Content-Disposition": `attachment; filename="${payload.filename}"`,
+    "Cache-Control": "no-store",
+    "Access-Control-Allow-Origin": "*"
+  });
+  res.end(payload.data);
 }
 
 const server = http.createServer((req, res) => {
@@ -44,7 +54,19 @@ const server = http.createServer((req, res) => {
     sendJson(res, 200, {
       ok: true,
       endpoint: "/api/spectrum",
+      presentationEndpoint: "/api/presentation",
       supportedTypes: [...SUPPORTED_TYPES]
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/presentation") {
+    generateSpectrumPresentation({
+      smiles: url.searchParams.get("smiles")
+    }).then((payload) => {
+      sendPptx(res, payload);
+    }).catch((error) => {
+      sendJson(res, 400, { error: error.message || "Could not generate PPTX." });
     });
     return;
   }

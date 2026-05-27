@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
-const { generateSpectrumCsv } = require("../api/predictor-service");
+const { generateSpectrumCsv, generateSpectrumPresentation } = require("../api/predictor-service");
 
-function run() {
+async function run() {
   const proton = generateSpectrumCsv({ smiles: "CCO", type: "proton" });
   assert.equal(proton.filename, "CCO-1H-spectrum.csv");
   assert.equal(proton.csv.includes("section,nucleus,signal_id"), true, "proton export should include 1D header");
@@ -23,7 +23,17 @@ function run() {
     "unsupported type should be rejected"
   );
 
+  const pptx = await generateSpectrumPresentation({ smiles: "CCO" });
+  assert.equal(pptx.filename, "CCO-nmr-slides.pptx");
+  assert.equal(typeof pptx.slideCount, "number");
+  assert.equal(pptx.slideCount >= 6, true, "presentation should include structure and spectra slides");
+  assert.equal(Buffer.isBuffer(pptx.data), true, "presentation should be returned as a Node buffer");
+  assert.equal(pptx.data.length > 5000, true, "presentation buffer should not be empty");
+
   console.log("nmr-predictor API tests passed");
 }
 
-run();
+run().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

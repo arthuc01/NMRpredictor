@@ -10,5 +10,8 @@
     "test:aromatic": "node tests/nmr-predictor-aromatic-trends.test.js",
     "test:parser": "node tests/nmr-predictor-parser-edgecases.test.js",
     "test:api": "node tests/nmr-predictor-api.test.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
   }
 }

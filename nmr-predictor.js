@@ -21,6 +21,7 @@ const NMRP = {
   caption: document.getElementById("nmrp-spectrum-caption"),
   fullscreen: document.getElementById("nmrp-fullscreen"),
   downloadCsv: document.getElementById("nmrp-download-csv"),
+  downloadPptx: document.getElementById("nmrp-download-pptx"),
   downloadNef: document.getElementById("nmrp-download-nef"),
   zoomIn: document.getElementById("nmrp-zoom-in"),
   zoomOut: document.getElementById("nmrp-zoom-out"),
@@ -105,6 +106,17 @@ function downloadBlob(blob, filename) {
     }
     URL.revokeObjectURL(objectUrl);
   }
+}
+
+function predictorExportContext() {
+  return {
+    autoDomainForSignals,
+    expandPeaks,
+    gaussian,
+    gaussianAreaHeight,
+    fallbackNoesyCoordinates,
+    minimizeDisplayCoordinates
+  };
 }
 
 function autoDomainForSignals(signals, fallback, options = {}) {
@@ -3594,6 +3606,41 @@ function exportAllSpectraNef() {
   setPredictorStatus(`Downloaded NEF file with 1H, 13C, HSQC, COSY and NOESY peak lists to ${filename}.`);
 }
 
+async function exportAllSpectraPptx() {
+  const totalSignals = (state.predictions.proton?.length || 0)
+    + (state.predictions.carbon?.length || 0)
+    + (state.predictions.hsqc?.length || 0)
+    + (state.predictions.cosy?.length || 0)
+    + (state.predictions.noesy?.length || 0);
+  if (!totalSignals || !state.graph) {
+    setPredictorStatus("No predicted spectra available to export yet.", true);
+    return;
+  }
+  if (!window.PptxGenJS || !window.NMRPresentationExport?.buildPresentationFile) {
+    setPredictorStatus("PPTX export library did not load.", true);
+    return;
+  }
+  const smiles = NMRP.smiles.value.trim();
+  setPredictorStatus("Building PPTX deck...");
+  try {
+    const payload = await window.NMRPresentationExport.buildPresentationFile(window.PptxGenJS, predictorExportContext(), {
+      smiles,
+      graph: state.graph,
+      predictions: state.predictions,
+      structureCoordinates: state.cactus3d?.coordinates || null
+    }, {
+      outputType: "blob"
+    });
+    const blob = payload.data instanceof Blob
+      ? payload.data
+      : new Blob([payload.data], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+    downloadBlob(blob, payload.filename);
+    setPredictorStatus(`Downloaded PowerPoint deck to ${payload.filename}.`);
+  } catch (error) {
+    setPredictorStatus(error.message || "Could not generate PPTX.", true);
+  }
+}
+
 function renderActiveSpectrum() {
   const type = state.activeSpectrum;
   NMRP.protonTab.classList.toggle("nav-link-active", type === "proton");
@@ -3886,7 +3933,8 @@ function readLaunchParams() {
   return {
     smiles,
     type: ["proton", "carbon", "hsqc", "cosy", "noesy"].includes(type) ? type : "",
-    shouldDownloadCsv: download === "csv"
+    shouldDownloadCsv: download === "csv",
+    shouldDownloadPptx: download === "pptx"
   };
 }
 
@@ -3907,6 +3955,8 @@ async function applyLaunchParams() {
   }
   if (launch.shouldDownloadCsv) {
     exportActiveSpectrumCsv();
+  } else if (launch.shouldDownloadPptx) {
+    await exportAllSpectraPptx();
   }
 }
 
@@ -3938,6 +3988,9 @@ NMRP.noesyTab?.addEventListener("click", () => {
   renderActiveSpectrum();
 });
 NMRP.downloadCsv.addEventListener("click", exportActiveSpectrumCsv);
+NMRP.downloadPptx?.addEventListener("click", () => {
+  exportAllSpectraPptx();
+});
 NMRP.downloadNef?.addEventListener("click", exportAllSpectraNef);
 NMRP.zoomIn.addEventListener("click", () => zoomSpectrum(0.5));
 NMRP.zoomOut.addEventListener("click", () => zoomSpectrum(2));

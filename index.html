@@ -12,7 +12,9 @@
   <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
   <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
   <script src="https://jsme-editor.github.io/dist/jsme/jsme.nocache.js"></script>
-  <script src="nmr-predictor.js?v=20260522c" defer></script>
+  <script src="pptxgen.bundle.js"></script>
+  <script src="pptx-export.js"></script>
+  <script src="nmr-predictor.js?v=20260527a" defer></script>
 </head>
 <body>
   <div class="page-shell">
@@ -47,7 +49,7 @@
       <div class="workbench-tools">
         <div class="hero-card-section hero-card-section-tight">
           <p class="hero-card-label">Pages Export</p>
-          <code class="inline-code-block">index.html?smiles=CCO&amp;type=proton&amp;download=csv</code>
+          <code class="inline-code-block">index.html?smiles=CCO&amp;download=pptx</code>
         </div>
         <div class="hero-card-section hero-card-section-tight">
           <p class="hero-card-label">Examples</p>
@@ -105,6 +107,7 @@
           <button id="nmrp-noesy-tab" class="chip" type="button">NOESY</button>
           <button id="nmrp-fullscreen" class="chip" type="button">Full Screen</button>
           <button id="nmrp-download-csv" class="chip" type="button">Download CSV</button>
+          <button id="nmrp-download-pptx" class="chip" type="button">Download PPTX</button>
           <button id="nmrp-download-nef" class="chip" type="button">Download NEF</button>
           <button id="nmrp-zoom-in" class="chip" type="button">Zoom In</button>
           <button id="nmrp-zoom-out" class="chip" type="button">Zoom Out</button>
@@ -171,8 +174,8 @@
 
     <section id="api" class="panel api-panel">
       <div class="panel-heading">
-        <h2>CSV API</h2>
-        <p>Use GitHub Pages for browser-side CSV export, or run the local Node endpoint for direct HTTP CSV responses.</p>
+        <h2>Export API</h2>
+        <p>Use GitHub Pages for browser-side CSV or PPTX export, or run the local Node endpoints for direct HTTP downloads.</p>
       </div>
       <div class="api-grid">
         <div class="api-card">
@@ -181,14 +184,25 @@
           <p class="api-copy">Loads the static predictor, applies the query parameters in the browser, and automatically downloads the selected spectrum as CSV.</p>
         </div>
         <div class="api-card">
+          <span class="api-card-label">GitHub Pages PPTX</span>
+          <code class="inline-code-block">index.html?smiles=CCO&amp;download=pptx</code>
+          <p class="api-copy">Generates a printable PowerPoint deck in the browser with the structure on slide one and each spectrum on separate slides.</p>
+        </div>
+        <div class="api-card">
           <span class="api-card-label">Node Endpoint</span>
           <code class="inline-code-block">GET /api/spectrum?smiles=CCO&amp;type=proton</code>
           <p class="api-copy">Supported types: <code>proton</code>, <code>carbon</code>, <code>hsqc</code>, <code>cosy</code>, <code>noesy</code>.</p>
         </div>
         <div class="api-card">
+          <span class="api-card-label">Node PPTX</span>
+          <code class="inline-code-block">GET /api/presentation?smiles=CCO</code>
+          <p class="api-copy">Returns a PowerPoint deck with the molecular structure slide followed by 1H, 13C, HSQC, COSY, and NOESY slides.</p>
+        </div>
+        <div class="api-card">
           <span class="api-card-label">Run locally</span>
           <pre class="code-block"><code>npm run api</code></pre>
           <pre class="code-block"><code>curl "http://localhost:3000/api/spectrum?smiles=CCO&amp;type=proton" -o ethanol-1h.csv</code></pre>
+          <pre class="code-block"><code>curl "http://localhost:3000/api/presentation?smiles=CCO" -o ethanol-nmr-slides.pptx</code></pre>
         </div>
         <div class="api-card">
           <span class="api-card-label">Docs</span>
