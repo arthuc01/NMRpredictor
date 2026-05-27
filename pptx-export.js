@@ -23,7 +23,7 @@
   }
 
   function fallback1dDomain(type) {
-    return type === "carbon" ? { min: 0, max: 220 } : { min: 0, max: 12 };
+    return type === "carbon" ? { min: 0, max: 200 } : { min: 0, max: 10 };
   }
 
   function autoDomain(ctx, signals, type) {
@@ -398,7 +398,14 @@
           type: "proton",
           title: "1H NMR",
           panels: [
-            { title: "Full spectrum", svg: render1DSvg(ctx, predictions.proton || [], "proton", { width: 1200, height: 320 }) },
+            {
+              title: "Full spectrum",
+              svg: render1DSvg(ctx, predictions.proton || [], "proton", {
+                width: 1200,
+                height: 320,
+                domain: { min: 0, max: 10 }
+              })
+            },
             ...protonZooms.map((panel) => ({
               title: panel.title,
               svg: render1DSvg(ctx, predictions.proton || [], "proton", {
@@ -415,7 +422,14 @@
           type: "carbon",
           title: "13C NMR",
           panels: [
-            { title: "Full spectrum", svg: render1DSvg(ctx, predictions.carbon || [], "carbon", { width: 1200, height: 360 }) }
+            {
+              title: "Full spectrum",
+              svg: render1DSvg(ctx, predictions.carbon || [], "carbon", {
+                width: 1200,
+                height: 360,
+                domain: { min: 0, max: 200 }
+              })
+            }
           ]
         },
         {
