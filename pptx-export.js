@@ -99,7 +99,7 @@
       }));
   }
 
-  function selectZoomWindows(ctx, protonSignals, maxPanels = 3) {
+  function selectZoomWindows(ctx, protonSignals, maxPanels = 4) {
     const signals = nonSingletSignals(ctx, protonSignals).sort((a, b) => b.signal.ppm - a.signal.ppm);
     if (!signals.length) return [];
 
@@ -209,11 +209,6 @@
       }).join(""),
       `<line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#000000" stroke-width="1.5"/>`,
       `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" stroke="#000000" stroke-width="1.5"/>`,
-      peaks.map((peak) => {
-        const x = xForPpm(peak.ppm, domain, margin.left, plotW).toFixed(2);
-        const y = yForValue(relativeHeightAt(peak.ppm), margin.top, plotH).toFixed(2);
-        return `<line x1="${x}" y1="${height - margin.bottom}" x2="${x}" y2="${y}" stroke="#111111" stroke-width="${type === "carbon" ? 2.2 : 1.2}" opacity="0.88"/>`;
-      }).join(""),
       `<path d="${path}" fill="none" stroke="#111111" stroke-width="${type === "carbon" ? 2.2 : 2}" stroke-linejoin="round" stroke-linecap="round"/>`,
       signalLabels.map((label) => `<text x="${label.x.toFixed(2)}" y="${Math.max(18, label.y).toFixed(2)}" font-size="14" text-anchor="middle" fill="#000000">${label.text}</text>`).join(""),
       `<text x="${width / 2}" y="${height - 10}" font-size="18" text-anchor="middle" fill="#000000">Chemical shift (ppm)</text>`,
@@ -355,13 +350,40 @@
     ].join("");
   }
 
+  function normalizeStructureSvg(svg, options = {}) {
+    const width = options.width || 960;
+    const height = options.height || 560;
+    if (!svg || !String(svg).includes("<svg")) {
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" fill="#ffffff"/></svg>`;
+    }
+    const source = String(svg).replace(/<\?xml[\s\S]*?\?>/gi, "").replace(/<!DOCTYPE[\s\S]*?>/gi, "").trim();
+    const openTagMatch = source.match(/<svg\b([^>]*)>/i);
+    const innerMatch = source.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/i);
+    const viewBoxMatch = source.match(/viewBox=['"]([^'"]+)['"]/i);
+    const widthMatch = source.match(/\bwidth=['"]([\d.]+)(?:px)?['"]/i);
+    const heightMatch = source.match(/\bheight=['"]([\d.]+)(?:px)?['"]/i);
+    const viewBox = viewBoxMatch
+      ? viewBoxMatch[1]
+      : `0 0 ${widthMatch ? Number(widthMatch[1]) || width : width} ${heightMatch ? Number(heightMatch[1]) || height : height}`;
+    const inner = innerMatch ? innerMatch[1] : source.replace(/<svg\b[^>]*>/i, "").replace(/<\/svg>/i, "");
+    const preserveAspectRatio = /preserveAspectRatio=/i.test(openTagMatch?.[1] || "") ? "" : ` preserveAspectRatio="xMidYMid meet"`;
+    return [
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${viewBox}"${preserveAspectRatio}>`,
+      `<rect x="0" y="0" width="100%" height="100%" fill="#ffffff"/>`,
+      inner,
+      `</svg>`
+    ].join("");
+  }
+
   function buildPresentationSpec(ctx, input) {
     const smiles = String(input.smiles || "").trim();
     const graph = input.graph;
     const predictions = input.predictions;
     const structureCoordinates = deriveStructureCoordinates(ctx, smiles, graph, input.structureCoordinates);
-    const structureSvg = renderStructureSvg(graph, structureCoordinates);
-    const protonZooms = selectZoomWindows(ctx, predictions.proton || [], 3);
+    const structureSvg = input.structureSvg
+      ? normalizeStructureSvg(input.structureSvg)
+      : renderStructureSvg(graph, structureCoordinates);
+    const protonZooms = selectZoomWindows(ctx, predictions.proton || [], 4);
     return {
       filename: `${sanitizeFilename(smiles)}-nmr-slides.pptx`,
       slides: [
@@ -462,12 +484,18 @@
         if (!zooms.length) {
           return;
         }
-        const panelW = zooms.length === 1 ? 5.8 : zooms.length === 2 ? 5.8 : 4.0;
-        const gap = zooms.length === 3 ? 0.2 : 0.3;
+        const layouts = zooms.length <= 2
+          ? zooms.map((_, index) => ({ x: 0.55 + index * 6.1, y: 4.8, w: 5.85, h: 2.0 }))
+          : zooms.map((_, index) => ({
+            x: 0.55 + (index % 2) * 6.1,
+            y: 4.8 + Math.floor(index / 2) * 1.08,
+            w: 5.85,
+            h: 0.98
+          }));
         zooms.forEach((zoom, index) => {
-          const x = 0.55 + index * (panelW + gap);
-          slide.addText(zoom.title, { x, y: 4.55, w: panelW, h: 0.2, fontFace: "Arial", fontSize: 9.5, color: "000000", align: "center" });
-          slide.addImage({ data: svgToDataUri(zoom.svg), x, y: 4.8, w: panelW, h: 2.0 });
+          const box = layouts[index];
+          slide.addText(zoom.title, { x: box.x, y: box.y - 0.22, w: box.w, h: 0.18, fontFace: "Arial", fontSize: 9.5, color: "000000", align: "center" });
+          slide.addImage({ data: svgToDataUri(zoom.svg), x: box.x, y: box.y, w: box.w, h: box.h });
         });
         return;
       }
@@ -490,6 +518,7 @@
     buildPresentationFile,
     render1DSvg,
     render2DSvg,
+    normalizeStructureSvg,
     renderStructureSvg,
     sanitizeFilename,
     svgToDataUri

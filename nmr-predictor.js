@@ -119,6 +119,26 @@ function predictorExportContext() {
   };
 }
 
+function exportStructureSvgForPptx(smiles) {
+  if (!state.rdkit || !smiles) {
+    return null;
+  }
+  let mol = null;
+  try {
+    mol = state.rdkit.get_mol(smiles);
+    if (!mol) {
+      return null;
+    }
+    return mol.get_svg ? mol.get_svg() : null;
+  } catch (error) {
+    return null;
+  } finally {
+    if (mol?.delete) {
+      mol.delete();
+    }
+  }
+}
+
 function autoDomainForSignals(signals, fallback, options = {}) {
   const ppmValues = (signals || [])
     .map((signal) => Number(signal.ppm))
@@ -3627,7 +3647,8 @@ async function exportAllSpectraPptx() {
       smiles,
       graph: state.graph,
       predictions: state.predictions,
-      structureCoordinates: state.cactus3d?.coordinates || null
+      structureCoordinates: state.cactus3d?.coordinates || null,
+      structureSvg: exportStructureSvgForPptx(smiles)
     }, {
       outputType: "blob"
     });
