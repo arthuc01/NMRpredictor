@@ -76,9 +76,22 @@
             <tr><td>Aldehyde</td><td>~9.6</td><td>Recognized as carbonyl carbon bearing hydrogen.</td></tr>
             <tr><td>Phenol OH</td><td>~9</td><td>Broad and solvent dependent.</td></tr>
             <tr><td>Carboxylic acid OH</td><td>~11-12</td><td>Broad, solvent and concentration dependent, and may disappear in real spectra.</td></tr>
+            <tr><td>Amine N-H / alpha C-H</td><td>~1.5-2.0 (NH) / ~2.4-2.7 (alpha)</td><td>Differentiated by primary/secondary/tertiary N-substitution; shift decreases with more N-alkyl substitution, matching the trend seen for methylamine/dimethylamine/trimethylamine.</td></tr>
           </tbody>
         </table>
       </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Solvent</h2>
+        <p>A solvent selector (CDCl3, DMSO-d6, D2O) adjusts exchangeable-proton shifts and visibility.</p>
+      </div>
+      <ul>
+        <li>CDCl3 and DMSO-d6 use different flat-offset tables for OH/NH/SH shifts (e.g. amide N-H ~7.2 ppm in CDCl3 vs ~8.2 ppm in DMSO-d6), reflecting well-documented solvent-dependent hydrogen-bonding differences.</li>
+        <li>D2O hides all OH/NH/SH signals entirely, since they rapidly exchange with solvent deuterons and are not normally observed. This is a simplification — thiols exchange more slowly in practice than alcohols/amines/amides, but all three are lumped together here for a clear, consistent teaching point.</li>
+        <li>Non-exchangeable 1H and all 13C shifts are not solvent-adjusted.</li>
+      </ul>
     </section>
 
     <section class="panel">
@@ -104,6 +117,8 @@
             <tr><td>Aromatic</td><td>~120-160</td><td>Substituent tables include ipso, ortho, meta, and para effects for common groups.</td></tr>
             <tr><td>Ester/acid/amide carbonyl</td><td>~165-180</td><td>Ethyl acetate, methyl benzoate, aspirin, and benzoic-acid-like values are used as calibration anchors.</td></tr>
             <tr><td>Aldehyde / ketone carbonyl</td><td>~190-220</td><td>Conjugated ketones are shifted slightly upfield.</td></tr>
+            <tr><td>Amine alpha carbon</td><td>~38 (primary) / ~46 (secondary) / ~54 (tertiary)</td><td>Increases with N-alkyl substitution, matching the methylamine/dimethylamine/trimethylamine trend.</td></tr>
+            <tr><td>Branched/steric (gamma) correction</td><td>-1 to -4 ppm</td><td>A simplified gamma-gauche-style correction shifts carbons upfield when another carbon sits exactly three bonds away, scaled by how branched each end is. Approximates steric compression in branched/cyclic alkyl chains; not a full Grant-Paul/Lindeman-Adams additive model.</td></tr>
           </tbody>
         </table>
       </div>
@@ -121,6 +136,7 @@
         <li>HSQC shows one-bond H-C correlations only.</li>
         <li>COSY shows simple adjacent-proton correlations only.</li>
         <li>NOESY uses CACTUS 3D coordinates when available, otherwise fallback coordinates. Off-diagonal peaks are proton pairs within 5 A, with relative volume approximately proportional to 1/r^6.</li>
+        <li>When real CACTUS 3D coordinates are available, a simplified through-space ring-current correction is added for atoms more than three bonds from an aromatic ring (e.g. across a fused ring system or a folded macrocycle). It is skipped for atoms within three bonds of a ring, since that region is already covered by the topological aromatic substituent table above, and skipped entirely when only fallback (non-physical) coordinates are available.</li>
       </ul>
     </section>
 
@@ -130,11 +146,12 @@
         <p>These limitations are deliberate tradeoffs for a transparent teaching tool.</p>
       </div>
       <ul>
-        <li>No full spin-system simulation, second-order effects, diastereotopic splitting, or dynamic exchange model.</li>
+        <li>No full spin-system simulation, second-order effects, or dynamic exchange model. CH2 protons adjacent to a likely stereocenter are flagged in their label as "diastereotopic" and shown as one averaged signal, rather than being split into a real AB pattern.</li>
         <li>Symmetry and equivalence are graph-environment based and approximate.</li>
         <li>13C intensities are shown as approximate carbon counts, not real relaxation or NOE-dependent intensities.</li>
-        <li>Exchangeable OH/NH/SH shifts are broad and solvent dependent; real peaks may move or disappear.</li>
-        <li>CACTUS atom order must match the parsed heavy-atom order before its coordinates are used for NOESY distances.</li>
+        <li>Exchangeable OH/NH/SH shifts are broad and solvent dependent; real peaks may move or disappear. The solvent selector covers CDCl3, DMSO-d6, and D2O only, with flat offsets rather than a full solvent model.</li>
+        <li>CACTUS atom order must match the parsed heavy-atom order before its coordinates are used for NOESY distances and the ring-current correction.</li>
+        <li>NOESY and the ring-current correction both use a single static 3D conformer (from CACTUS, or a non-physical fallback layout). Flexible chains in solution sample many conformations, so a real NOE is a population-weighted average that this single-geometry model cannot capture — predictions are most reliable for rigid or ring-constrained systems.</li>
       </ul>
     </section>
   </div>

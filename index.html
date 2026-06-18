@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260522c">
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
-  <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
-  <script src="https://jsme-editor.github.io/dist/jsme/jsme.nocache.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" onerror="window.__nmrpCdnFailures = (window.__nmrpCdnFailures || []).concat('Plotly')"></script>
+  <script src="https://3Dmol.org/build/3Dmol-min.js" onerror="window.__nmrpCdnFailures = (window.__nmrpCdnFailures || []).concat('3Dmol')"></script>
+  <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js" onerror="window.__nmrpCdnFailures = (window.__nmrpCdnFailures || []).concat('RDKit')"></script>
+  <script src="https://jsme-editor.github.io/dist/jsme/jsme.nocache.js" onerror="window.__nmrpCdnFailures = (window.__nmrpCdnFailures || []).concat('JSME')"></script>
   <script src="pptxgen.bundle.js?v=20260527a"></script>
   <script src="pptx-export.js?v=20260527a"></script>
   <script src="nmr-predictor.js?v=20260527b" defer></script>
@@ -75,6 +75,15 @@
         <label class="field">
           <span>SMILES</span>
           <input id="nmrp-smiles-input" type="text" value="CCO" spellcheck="false" autocomplete="off">
+        </label>
+
+        <label class="field compact-field">
+          <span>Solvent</span>
+          <select id="nmrp-solvent-select">
+            <option value="cdcl3" selected>CDCl3</option>
+            <option value="dmso">DMSO-d6</option>
+            <option value="d2o">D2O (exchangeable H not observed)</option>
+          </select>
         </label>
 
         <div class="button-row">

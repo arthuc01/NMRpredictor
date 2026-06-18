@@ -448,6 +448,22 @@ li,
   color: var(--muted-strong);
 }
 
+.compact-field {
+  max-width: 220px;
+}
+
+.primary-button:disabled,
+select:disabled {
+  opacity: 0.55;
+  cursor: progress;
+  transform: none;
+}
+
+.chip.is-pending {
+  color: var(--accent, #18d47b);
+  font-style: italic;
+}
+
 input[type="text"],
 input[type="number"],
 select {
@@ -830,6 +846,12 @@ output {
 .nmrp-assignment-row:hover,
 .nmrp-assignment-row.is-selected {
   background: rgba(24, 212, 123, 0.1);
+}
+
+.nmrp-label-more {
+  color: var(--accent-strong, #0fba69);
+  font-style: italic;
+  cursor: help;
 }
 
 .nmrp-highlight-note {

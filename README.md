@@ -148,4 +148,6 @@ Individual suites:
 node tests/nmr-predictor-smoke.test.js
 node tests/nmr-predictor-aromatic-trends.test.js
 node tests/nmr-predictor-parser-edgecases.test.js
+node tests/nmr-predictor-api.test.js
+node tests/nmr-predictor-heuristics-v2.test.js
 ```

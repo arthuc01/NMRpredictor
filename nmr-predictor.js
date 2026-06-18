@@ -1,5 +1,6 @@
 const NMRP = {
   smiles: document.getElementById("nmrp-smiles-input"),
+  solvent: document.getElementById("nmrp-solvent-select"),
   predict: document.getElementById("nmrp-predict-button"),
   draw: document.getElementById("nmrp-draw-button"),
   status: document.getElementById("nmrp-status"),
@@ -41,6 +42,27 @@ const HALIDE_SHIFT_RULES = {
   Br: { alphaH: 3.30, alphaC: 33, effectH: 0.18, effectC: 4 },
   I: { alphaH: 3.15, alphaC: 15, effectH: 0.12, effectC: 3 }
 };
+
+// Approximate, literature-typical exchangeable-proton shifts per solvent.
+// D2O rapidly exchanges OH/NH/SH with solvent deuterons, so those signals
+// are not normally observed; everything else uses the CDCl3 defaults.
+const SOLVENT_PROFILES = {
+  cdcl3: {
+    label: "CDCl3", hideExchangeable: false,
+    acidOH: 11.0, phenolOH: 8.7, alcoholOH: 4.8, amideNH: 7.2, anilineNH: 4.3,
+    aminePrimaryNH: 1.5, amineSecondaryNH: 2.0, thiolSH: 1.8, polyhydroxyDelta: 0
+  },
+  dmso: {
+    label: "DMSO-d6", hideExchangeable: false,
+    acidOH: 12.2, phenolOH: 9.3, alcoholOH: 4.6, amideNH: 8.2, anilineNH: 5.4,
+    aminePrimaryNH: 2.4, amineSecondaryNH: 2.6, thiolSH: 2.3, polyhydroxyDelta: 0.6
+  },
+  d2o: { label: "D2O", hideExchangeable: true }
+};
+
+function solventProfileFor(solvent) {
+  return SOLVENT_PROFILES[solvent] || SOLVENT_PROFILES.cdcl3;
+}
 
 const state = {
   rdkit: null,
@@ -734,6 +756,13 @@ function isAmideNitrogen(graph, atom) {
   return atom.element === "N" && neighbors(graph, atom).some(({ atom: n, bond }) => bond.order === 1 && isCarbonylCarbon(graph, n));
 }
 
+function nitrogenSubstitutionClass(graph, atom) {
+  if (atom.element !== "N") return null;
+  if (atom.hydrogens >= 2) return "primary";
+  if (atom.hydrogens === 1) return "secondary";
+  return "tertiary";
+}
+
 function sulfurOxoCount(graph, atom) {
   if (atom.element !== "S") return 0;
   return neighbors(graph, atom).filter(({ atom: n, bond }) => n.element === "O" && bond.order === 2).length;
@@ -757,7 +786,12 @@ function carbonAlphaHeteroShiftH(graph, atom) {
   if (!heteroNeighbours.length) return null;
   const entries = heteroNeighbours.map(({ atom: n }) => {
     if (n.element === "O") return { ppm: 3.60, label: "alpha to O" };
-    if (n.element === "N") return { ppm: isAmideNitrogen(graph, n) ? 3.35 : 2.70, label: isAmideNitrogen(graph, n) ? "alpha to amide N" : "alpha to amine N" };
+    if (n.element === "N") {
+      if (isAmideNitrogen(graph, n)) return { ppm: 3.35, label: "alpha to amide N" };
+      const nClass = nitrogenSubstitutionClass(graph, n);
+      const ppm = { primary: 2.70, secondary: 2.55, tertiary: 2.40 }[nClass] ?? 2.70;
+      return { ppm, label: `alpha to ${nClass} amine N` };
+    }
     if (n.element === "S") {
       if (isSulfoneSulfur(graph, n)) return { ppm: 3.05, label: "alpha to sulfone S" };
       if (isSulfoxideSulfur(graph, n)) return { ppm: 2.85, label: "alpha to sulfoxide S" };
@@ -779,7 +813,12 @@ function carbonAlphaHeteroShiftC(graph, atom) {
   if (!heteroNeighbours.length) return null;
   const entries = heteroNeighbours.map(({ atom: n }) => {
     if (n.element === "O") return { ppm: 60, label: "C attached to O" };
-    if (n.element === "N") return { ppm: isAmideNitrogen(graph, n) ? 52 : 45, label: isAmideNitrogen(graph, n) ? "C attached to amide N" : "C attached to amine N" };
+    if (n.element === "N") {
+      if (isAmideNitrogen(graph, n)) return { ppm: 52, label: "C attached to amide N" };
+      const nClass = nitrogenSubstitutionClass(graph, n);
+      const ppm = { primary: 38, secondary: 46, tertiary: 54 }[nClass] ?? 45;
+      return { ppm, label: `C attached to ${nClass} amine N` };
+    }
     if (n.element === "S") {
       if (isSulfoneSulfur(graph, n)) return { ppm: 56, label: "C attached to sulfone S" };
       if (isSulfoxideSulfur(graph, n)) return { ppm: 49, label: "C attached to sulfoxide S" };
@@ -1064,27 +1103,36 @@ function radiusEnvironmentKey(graph, atom, radius = 3) {
   return signatures[atom.id];
 }
 
-function baseProtonShift(graph, atom) {
-  const solventCaveat = "position solvent-dependent; may not appear";
+function baseProtonShift(graph, atom, solvent = "cdcl3") {
+  const solventProfile = solventProfileFor(solvent);
+  const solventCaveat = `position solvent-dependent (shown for ${solventProfile.label}); may not appear`;
+  if (["O", "N", "S"].includes(atom.element) && solventProfile.hideExchangeable) {
+    return null;
+  }
   if (atom.element === "O") {
     const polyhydroxyOh = polyhydroxyAlcoholOxygenShift(graph, atom);
-    if (polyhydroxyOh) return { ...polyhydroxyOh, label: `${polyhydroxyOh.label}; ${solventCaveat}` };
+    if (polyhydroxyOh) {
+      const ppm = polyhydroxyOh.ppm + (solventProfile.polyhydroxyDelta || 0);
+      return { ...polyhydroxyOh, ppm, label: `${polyhydroxyOh.label}; ${solventCaveat}` };
+    }
     if (neighbors(graph, atom).some(({ atom: n }) => isCarboxylCarbon(graph, n))) {
-      return { ppm: 11.0, label: `acid OH base range 10-13; ${solventCaveat}`, broad: true };
+      return { ppm: solventProfile.acidOH, label: `acid OH (${solventProfile.label}); ${solventCaveat}`, broad: true };
     }
     if (neighbors(graph, atom).some(({ atom: n }) => n.aromatic)) {
-      return { ppm: 8.7, label: `exchangeable phenol OH, often broad/variable near 9 ppm; ${solventCaveat}`, broad: true };
+      return { ppm: solventProfile.phenolOH, label: `exchangeable phenol OH (${solventProfile.label}), often broad/variable; ${solventCaveat}`, broad: true };
     }
-    return { ppm: 4.8, label: `exchangeable alcohol OH, often broad/variable; ${solventCaveat}`, broad: true };
+    return { ppm: solventProfile.alcoholOH, label: `exchangeable alcohol OH (${solventProfile.label}), often broad/variable; ${solventCaveat}`, broad: true };
   }
   if (atom.element === "N") {
-    if (isAmideNitrogen(graph, atom)) return { ppm: 7.2, label: `exchangeable amide NH, often broad; ${solventCaveat}`, broad: true };
-    if (neighbors(graph, atom).some(({ atom: n }) => n.aromatic)) return { ppm: 4.3, label: `exchangeable aniline-like NH, often broad; ${solventCaveat}`, broad: true };
-    return { ppm: 2.2, label: `exchangeable amine NH, often broad/variable; ${solventCaveat}`, broad: true };
+    if (isAmideNitrogen(graph, atom)) return { ppm: solventProfile.amideNH, label: `exchangeable amide NH (${solventProfile.label}), often broad; ${solventCaveat}`, broad: true };
+    if (neighbors(graph, atom).some(({ atom: n }) => n.aromatic)) return { ppm: solventProfile.anilineNH, label: `exchangeable aniline-like NH (${solventProfile.label}), often broad; ${solventCaveat}`, broad: true };
+    const nClass = nitrogenSubstitutionClass(graph, atom);
+    const ppm = nClass === "secondary" ? solventProfile.amineSecondaryNH : solventProfile.aminePrimaryNH;
+    return { ppm, label: `exchangeable ${nClass} amine NH (${solventProfile.label}), often broad/variable; ${solventCaveat}`, broad: true };
   }
   if (atom.element === "S") {
-    if (isThiolSulfur(graph, atom)) return { ppm: 1.8, label: `exchangeable thiol SH, often broad/variable; ${solventCaveat}`, broad: true };
-    return { ppm: 2.0, label: `exchangeable sulfur-bound H, often broad/variable; ${solventCaveat}`, broad: true };
+    if (isThiolSulfur(graph, atom)) return { ppm: solventProfile.thiolSH, label: `exchangeable thiol SH (${solventProfile.label}), often broad/variable; ${solventCaveat}`, broad: true };
+    return { ppm: solventProfile.thiolSH + 0.2, label: `exchangeable sulfur-bound H (${solventProfile.label}), often broad/variable; ${solventCaveat}`, broad: true };
   }
   if (isCyclopentadieneMethylene(graph, atom)) return { ppm: 2.90, label: "cyclopentadiene CH2" };
   const cyclopentadienePosition = isCyclopentadieneVinylic(graph, atom);
@@ -1257,6 +1305,33 @@ function baseCarbonShift(graph, atom) {
   return { ppm: degree <= 1 ? 14 : degree === 2 ? 25 : degree === 3 ? 35 : 40, label: "alkyl sp3 base range 10-40" };
 }
 
+function isPotentialStereocenter(graph, atom) {
+  if (atom.element !== "C" || atom.aromatic || atom.hydrogens > 1) return false;
+  const heavyNeighbors = neighbors(graph, atom).filter(({ bond }) => bond.order === 1);
+  if (heavyNeighbors.length + atom.hydrogens !== 4) return false;
+  const keys = heavyNeighbors.map(({ atom: n }) => radiusEnvironmentKey(graph, n, 2));
+  return new Set(keys).size === heavyNeighbors.length;
+}
+
+function isDiastereotopicCH2(graph, atom) {
+  if (atom.element !== "C" || atom.hydrogens !== 2 || atom.aromatic) return false;
+  return neighbors(graph, atom).some(({ atom: n, bond }) => bond.order === 1 && isPotentialStereocenter(graph, n));
+}
+
+function gammaSubstituentCorrectionC(graph, atom, distances) {
+  if (atom.element !== "C" || atom.aromatic) return 0;
+  const ownDegree = carbonDegree(graph, atom);
+  let correction = 0;
+  graph.atoms.forEach((other) => {
+    if (other.id === atom.id || other.element !== "C" || other.aromatic) return;
+    if (distances[atom.id][other.id] !== 3) return;
+    const otherDegree = carbonDegree(graph, other);
+    const perGamma = -1.4 - 0.4 * Math.max(0, otherDegree - 1) - 0.4 * Math.max(0, ownDegree - 1);
+    correction += Math.max(perGamma, -3.0);
+  });
+  return Math.max(correction, -4.0);
+}
+
 function correctionForAtom(graph, atom, nucleus, context) {
   if (nucleus === "1H" && (isCyclopentadieneMethylene(graph, atom) || isCyclopentadieneVinylic(graph, atom))) {
     return { ppm: 0, labels: [] };
@@ -1327,6 +1402,14 @@ function correctionForAtom(graph, atom, nucleus, context) {
   ppm += nucleus === "1H" ? (ownCharge * 0.28 + neighbourCharge * 0.16) : (ownCharge * 5.5 + neighbourCharge * 2.0);
   if (nucleus === "1H" && isBetaToAromaticCarbon(graph, atom)) ppm += 0.16;
 
+  if (nucleus === "13C" && atom.element === "C" && !atom.aromatic) {
+    const gamma = gammaSubstituentCorrectionC(graph, atom, distances);
+    if (gamma) {
+      ppm += gamma;
+      labels.push(`steric gamma correction (${gamma.toFixed(1)})`);
+    }
+  }
+
   if (atom.aromatic) ppm += nucleus === "1H" ? 0.18 : 3.0;
   if (neighbors(graph, atom).some(({ atom: n }) => n.aromatic || isAlkeneCarbon(graph, n))) {
     ppm += nucleus === "1H" ? 0.10 : 1.5;
@@ -1380,6 +1463,97 @@ function findAromaticSixRings(graph) {
   };
   aromaticIds.forEach((start) => visit(start, start, [start]));
   return rings;
+}
+
+// findAromaticSixRings does a small DFS over the aromatic subgraph; it's pure
+// w.r.t. graph topology, but gets called once per aromatic atom (from both the
+// 1H and 13C substituent-position corrections, plus the ring-current pass), so
+// memoize per graph instance instead of re-deriving the same ring list each time.
+const aromaticRingCache = new WeakMap();
+function findAromaticSixRingsCached(graph) {
+  if (aromaticRingCache.has(graph)) return aromaticRingCache.get(graph);
+  const rings = findAromaticSixRings(graph);
+  aromaticRingCache.set(graph, rings);
+  return rings;
+}
+
+const RING_CURRENT_K = 6.0;
+
+function vecSubtract(a, b) {
+  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+}
+
+function vecCross(a, b) {
+  return {
+    x: a.y * b.z - a.z * b.y,
+    y: a.z * b.x - a.x * b.z,
+    z: a.x * b.y - a.y * b.x
+  };
+}
+
+function vecLength(a) {
+  return Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
+function vecDot(a, b) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+// Builds a centroid/normal/radius descriptor for each aromatic six-ring from
+// a 3D conformer, used to estimate through-space ring-current shielding for
+// atoms that are topologically remote but spatially close (e.g. across a
+// fused ring system or a folded macrocycle).
+function computeAromaticRingGeometries(graph, coordinates) {
+  if (!Array.isArray(coordinates) || coordinates.length < graph.atoms.length) return [];
+  return findAromaticSixRingsCached(graph)
+    .map((ring) => {
+      const points = ring.atoms.map((id) => coordinates[id]).filter((point) => point && [point.x, point.y, point.z].every(Number.isFinite));
+      if (points.length < ring.atoms.length) return null;
+      const centroid = points.reduce((sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y, z: sum.z + point.z }), { x: 0, y: 0, z: 0 });
+      centroid.x /= points.length;
+      centroid.y /= points.length;
+      centroid.z /= points.length;
+      const normal = vecCross(vecSubtract(points[0], centroid), vecSubtract(points[1], centroid));
+      const normalLength = vecLength(normal);
+      if (normalLength < 1e-6) return null;
+      normal.x /= normalLength;
+      normal.y /= normalLength;
+      normal.z /= normalLength;
+      const radius = points.reduce((sum, point) => sum + vecLength(vecSubtract(point, centroid)), 0) / points.length;
+      return { atomIds: ring.atoms, centroid, normal, radius: Math.max(radius, 0.5) };
+    })
+    .filter(Boolean);
+}
+
+// Simplified McConnell-style point-dipole ring-current estimate. Only applied
+// to atoms more than 3 bonds from a given ring, since closer substituent
+// effects are already covered by the topological aromatic correction above —
+// this term exists to catch through-space (not through-bond) shielding from
+// rings that are folded close in 3D but far apart in the bonding graph.
+function ringCurrentCorrection(graph, atom, context) {
+  const rings = context.aromaticRings;
+  const point = context.ringCoordinates?.[atom.id];
+  if (!rings?.length || !point || ![point.x, point.y, point.z].every(Number.isFinite)) {
+    return { ppm: 0, labels: [] };
+  }
+  let ppm = 0;
+  const labels = [];
+  rings.forEach((ring) => {
+    if (ring.atomIds.includes(atom.id)) return;
+    const minTopoDistance = Math.min(...ring.atomIds.map((id) => context.distances[atom.id][id]));
+    if (!Number.isFinite(minTopoDistance) || minTopoDistance <= 3) return;
+    const relative = vecSubtract(point, ring.centroid);
+    const r = vecLength(relative);
+    if (r < 1e-3) return;
+    const ratio = Math.max(r / ring.radius, 0.8);
+    const cosTheta = vecDot(relative, ring.normal) / r;
+    const term = (RING_CURRENT_K * (1 - 3 * cosTheta * cosTheta)) / (ratio * ratio * ratio);
+    if (Math.abs(term) >= 0.03) {
+      ppm += term;
+      labels.push(`through-space ring current (3D estimate, ${term < 0 ? "shielded" : "deshielded"})`);
+    }
+  });
+  return { ppm: Math.max(-2.5, Math.min(2.5, ppm)), labels };
 }
 
 function classifyArylSubstituent(graph, substituent) {
@@ -1477,7 +1651,7 @@ function aromaticSubstituentCorrectionFallback(graph, atom, distances) {
 }
 
 function aromaticSubstituentCorrection(graph, atom, distances) {
-  const aromaticRings = findAromaticSixRings(graph).filter((ring) => ring.atoms.includes(atom.id));
+  const aromaticRings = findAromaticSixRingsCached(graph).filter((ring) => ring.atoms.includes(atom.id));
   if (!aromaticRings.length) {
     return aromaticSubstituentCorrectionFallback(graph, atom, distances);
   }
@@ -1524,7 +1698,7 @@ function aromaticCarbonPositionEffects(substituentKey) {
 }
 
 function aromaticCarbonSubstituentCorrection(graph, atom) {
-  const aromaticRings = findAromaticSixRings(graph).filter((ring) => ring.atoms.includes(atom.id));
+  const aromaticRings = findAromaticSixRingsCached(graph).filter((ring) => ring.atoms.includes(atom.id));
   if (!aromaticRings.length) return { ppm: 0, labels: [] };
   let ppm = 0;
   const labels = [];
@@ -1653,20 +1827,26 @@ function applyTieBreaking(signals) {
   return signals;
 }
 
-function predictEnvironments(graph) {
+function predictEnvironments(graph, coordinates = null, solvent = "cdcl3") {
   const context = {
     distances: computeDistanceMatrix(graph),
     groups: classifyFunctionalGroups(graph),
-    charges: estimatePartialCharges(graph)
+    charges: estimatePartialCharges(graph),
+    ringCoordinates: coordinates,
+    aromaticRings: coordinates ? computeAromaticRingGeometries(graph, coordinates) : []
   };
   const protonItems = [];
   const carbonItems = [];
 
   graph.atoms.forEach((atom) => {
     if (atom.hydrogens > 0 && ["C", "O", "N", "S", "Se", "Te"].includes(atom.element)) {
-      const base = baseProtonShift(graph, atom);
+      const base = baseProtonShift(graph, atom, solvent);
       if (base) {
         const correction = correctionForAtom(graph, atom, "1H", context);
+        const ringCurrent = ringCurrentCorrection(graph, atom, context);
+        const diastereotopicLabel = isDiastereotopicCH2(graph, atom)
+          ? ["diastereotopic CH2, shown as one averaged signal (real spectrum may show an AB pattern)"]
+          : [];
         const splitEnvironments = base.broad ? [] : adjacentHydrogenEnvironments(graph, atom);
         const n = splitEnvironments.reduce((sum, environment) => sum + environment.count, 0);
         const splitKey = splitEnvironments.map((environment) => `${environment.label || "adj"}:${environment.count}:${environment.jHz.toFixed(1)}`).join("/");
@@ -1676,7 +1856,7 @@ function predictEnvironments(graph) {
           atomIds: [atom.id + 1],
           sourceAtomIds: [atom.id + 1],
           carrierAtomIds: [atom.id + 1],
-          rawPpm: clampShift(base.ppm + correction.ppm, "1H"),
+          rawPpm: clampShift(base.ppm + correction.ppm + ringCurrent.ppm, "1H"),
           integration: atom.hydrogens,
           multiplicity: base.broad ? "broad s" : multiplicityFromEnvironments(splitEnvironments),
           neighborH: n,
@@ -1684,7 +1864,7 @@ function predictEnvironments(graph) {
           broad: Boolean(base.broad),
           environmentKey,
           signalId: `H-${stableHash(environmentKey).toString(16)}-${atom.id + 1}`,
-          label: [base.label, ...correction.labels].join("; ")
+          label: [base.label, ...correction.labels, ...ringCurrent.labels, ...diastereotopicLabel].join("; ")
         });
       }
     }
@@ -2122,16 +2302,23 @@ function cactus3dUrl(smiles) {
   return `https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(smiles)}/file?format=sdf&get3d=true`;
 }
 
+const CACTUS_TIMEOUT_MS = 8000;
+
 async function fetchCactus3DSdf(smiles) {
   const key = String(smiles || "").trim();
   if (!key || typeof fetch !== "function") return null;
   if (state.cactusCache.has(key)) {
     return state.cactusCache.get(key);
   }
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const timeoutId = controller && typeof setTimeout === "function"
+    ? setTimeout(() => controller.abort(), CACTUS_TIMEOUT_MS)
+    : null;
   const request = fetch(cactus3dUrl(key), {
     headers: {
       Accept: "chemical/x-mdl-sdfile, text/plain;q=0.9, */*;q=0.1"
-    }
+    },
+    signal: controller?.signal
   })
     .then(async (response) => {
       if (!response.ok) {
@@ -2143,7 +2330,10 @@ async function fetchCactus3DSdf(smiles) {
       }
       return sdf;
     })
-    .catch(() => null);
+    .catch(() => null)
+    .finally(() => {
+      if (timeoutId) clearTimeout(timeoutId);
+    });
   state.cactusCache.set(key, request);
   return request;
 }
@@ -3175,22 +3365,48 @@ function ppmFromPointer(event) {
   return domain.max - fraction * (domain.max - domain.min);
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// The base shift description (and any diastereotopic caveat) is the part a
+// student needs at a glance; the substituent/ring-current "breadcrumb" labels
+// explain *why* but clutter the table, so they're kept available on hover
+// rather than always shown inline.
+function splitAssignmentLabel(label) {
+  const segments = String(label || "").split("; ");
+  const primary = segments.filter((segment, index) => index === 0 || segment.includes("diastereotopic"));
+  const rest = segments.filter((segment, index) => index !== 0 && !segment.includes("diastereotopic"));
+  return { primary: primary.join("; "), hasMore: rest.length > 0 };
+}
+
 function renderAssignments() {
   const all = [...state.predictions.proton, ...state.predictions.carbon];
   if (!all.length) {
     NMRP.table.innerHTML = '<tr><td colspan="6">No assignments.</td></tr>';
     return;
   }
-  NMRP.table.innerHTML = all.map((item) => `
+  NMRP.table.innerHTML = all.map((item) => {
+    const multiplet = item.nucleus === "1H" ? multipletDetail(item) : "";
+    const { primary, hasMore } = splitAssignmentLabel(item.label);
+    const visibleText = [primary, multiplet].filter(Boolean).join("; ");
+    const fullText = [item.label, multiplet].filter(Boolean).join("; ");
+    return `
     <tr class="nmrp-assignment-row ${state.selectedSignalIds.includes(item.signalId) ? "is-selected" : ""}" data-signal-id="${item.signalId}">
       <td>${item.nucleus}</td>
       <td>${item.atomIds.join(", ")}</td>
       <td>${item.ppm.toFixed(2)} ppm</td>
       <td>${item.nucleus === "1H" ? item.integration.toFixed(0) : item.atomIds.length.toFixed(0)}</td>
       <td>${item.multiplicity}</td>
-      <td>${item.label}${item.nucleus === "1H" ? `; ${multipletDetail(item)}` : ""}</td>
+      <td title="${escapeHtml(fullText)}">${escapeHtml(visibleText)}${hasMore ? ' <span class="nmrp-label-more">more&hellip;</span>' : ""}</td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
   NMRP.table.querySelectorAll(".nmrp-assignment-row").forEach((row) => {
     row.addEventListener("click", () => selectSignal(row.dataset.signalId));
   });
@@ -3715,7 +3931,11 @@ function tryRenderRdkit(smiles) {
       NMRP.structure.insertAdjacentHTML("beforeend", `<div class="nmrp-highlight-note">Selected atoms: ${selectedAtomIds.join(", ")}</div>`);
     }
   } catch (error) {
-    NMRP.structure.innerHTML = `<div class="plot-empty">${error.message}</div>`;
+    NMRP.structure.replaceChildren();
+    const message = document.createElement("div");
+    message.className = "plot-empty";
+    message.textContent = error.message;
+    NMRP.structure.appendChild(message);
   } finally {
     if (mol?.delete) {
       mol.delete();
@@ -3832,6 +4052,47 @@ function selectSignals(signalIds) {
   renderActiveSpectrum();
 }
 
+function setPredictionLoading(isLoading) {
+  if (NMRP.predict) NMRP.predict.disabled = isLoading;
+  if (NMRP.solvent) NMRP.solvent.disabled = isLoading;
+}
+
+function setNoesyPending(isPending) {
+  if (!NMRP.noesyTab) return;
+  NMRP.noesyTab.textContent = isPending ? "NOESY (loading…)" : "NOESY";
+  NMRP.noesyTab.classList.toggle("is-pending", isPending);
+}
+
+function applyPredictionResults(graph, smiles, predictions, { resetView, cactus3d }) {
+  state.graph = graph;
+  state.predictions = predictions;
+  state.selectedSignalId = null;
+  state.selectedSignalIds = [];
+  state.defaultDomains = autoDefaultDomains(predictions);
+  if (cactus3d) state.cactus3d = cactus3d;
+  if (resetView) {
+    state.viewDomains = {
+      proton: { ...state.defaultDomains.proton },
+      carbon: { ...state.defaultDomains.carbon }
+    };
+    state.viewDomains2D = {
+      hsqc: { x: { min: 0, max: 12 }, y: { min: 0, max: 220 } },
+      cosy: { x: { min: 0, max: 12 }, y: { min: 0, max: 12 } },
+      noesy: { x: { min: 0, max: 12 }, y: { min: 0, max: 12 } }
+    };
+  }
+  state.lastSmiles = smiles;
+  NMRP.protonSummary.textContent = String(predictions.proton.length);
+  NMRP.carbonSummary.textContent = String(predictions.carbon.length);
+  if (NMRP.hsqcSummary) NMRP.hsqcSummary.textContent = String(predictions.hsqc.length);
+  if (NMRP.cosySummary) NMRP.cosySummary.textContent = String(predictions.cosy.length);
+  if (NMRP.noesySummary) NMRP.noesySummary.textContent = String(predictions.noesy.length);
+  tryRenderRdkit(smiles);
+  tryRender3d(smiles);
+  renderAssignments();
+  renderActiveSpectrum();
+}
+
 async function predictNmr() {
   const smiles = NMRP.smiles.value.trim();
   if (!smiles) {
@@ -3839,49 +4100,35 @@ async function predictNmr() {
     return;
   }
   const runId = ++state.predictionRunId;
+  const solvent = NMRP.solvent?.value || "cdcl3";
+  setPredictionLoading(true);
+  setNoesyPending(true);
   try {
     const graph = parseSmiles(smiles);
-    const predictions1d = predictEnvironments(graph);
-    const hsqc = predictHsqc(graph, predictions1d.proton, predictions1d.carbon);
-    const cosy = predictCosy(graph, predictions1d.proton);
-    setPredictorStatus("Predicting NMR and requesting CACTUS 3D coordinates for NOESY...");
+    const hasAromaticRing = graph.atoms.some((atom) => atom.aromatic);
+    const shouldResetView = smiles !== state.lastSmiles;
+
+    // Show 1H/13C/HSQC/COSY immediately from topology alone so the UI never
+    // blocks on the network. NOESY (and, for aromatic molecules, a ring-current
+    // refinement) follow once CACTUS 3D coordinates resolve.
+    let predictions1d = predictEnvironments(graph, null, solvent);
+    let hsqc = predictHsqc(graph, predictions1d.proton, predictions1d.carbon);
+    let cosy = predictCosy(graph, predictions1d.proton);
+    applyPredictionResults(graph, smiles, { ...predictions1d, hsqc, cosy, noesy: [] }, { resetView: shouldResetView });
+    setPredictorStatus(`Predicted 1H:${predictions1d.proton.length} 13C:${predictions1d.carbon.length} HSQC:${hsqc.length} COSY:${cosy.length}. Requesting CACTUS 3D coordinates for NOESY${hasAromaticRing ? " and ring-current refinement" : ""}...`);
+
     const cactus3d = await resolveCactus3d(smiles, graph);
     if (runId !== state.predictionRunId) {
       return;
     }
+    if (hasAromaticRing && cactus3d.source === "cactus") {
+      predictions1d = predictEnvironments(graph, cactus3d.coordinates, solvent);
+      hsqc = predictHsqc(graph, predictions1d.proton, predictions1d.carbon);
+      cosy = predictCosy(graph, predictions1d.proton);
+    }
     const noesy = predictNoesy(graph, predictions1d.proton, smiles, cactus3d.coordinates);
     const predictions = { ...predictions1d, hsqc, cosy, noesy };
-    if (runId !== state.predictionRunId) {
-      return;
-    }
-    const shouldResetView = smiles !== state.lastSmiles;
-    state.graph = graph;
-    state.cactus3d = cactus3d;
-    state.predictions = predictions;
-    state.selectedSignalId = null;
-    state.selectedSignalIds = [];
-    state.defaultDomains = autoDefaultDomains(predictions);
-    if (shouldResetView) {
-      state.viewDomains = {
-        proton: { ...state.defaultDomains.proton },
-        carbon: { ...state.defaultDomains.carbon }
-      };
-      state.viewDomains2D = {
-        hsqc: { x: { min: 0, max: 12 }, y: { min: 0, max: 220 } },
-        cosy: { x: { min: 0, max: 12 }, y: { min: 0, max: 12 } },
-        noesy: { x: { min: 0, max: 12 }, y: { min: 0, max: 12 } }
-      };
-    }
-    state.lastSmiles = smiles;
-    NMRP.protonSummary.textContent = String(predictions.proton.length);
-    NMRP.carbonSummary.textContent = String(predictions.carbon.length);
-    if (NMRP.hsqcSummary) NMRP.hsqcSummary.textContent = String(predictions.hsqc.length);
-    if (NMRP.cosySummary) NMRP.cosySummary.textContent = String(predictions.cosy.length);
-    if (NMRP.noesySummary) NMRP.noesySummary.textContent = String(predictions.noesy.length);
-    tryRenderRdkit(smiles);
-    tryRender3d(smiles);
-    renderAssignments();
-    renderActiveSpectrum();
+    applyPredictionResults(graph, smiles, predictions, { resetView: false, cactus3d });
     const noesySource = cactus3d.source === "cactus"
       ? "CACTUS 3D distances"
       : cactus3d.source === "cactus-viewer-only"
@@ -3890,6 +4137,11 @@ async function predictNmr() {
     setPredictorStatus(`Predicted 1H:${predictions.proton.length} 13C:${predictions.carbon.length} HSQC:${predictions.hsqc.length} COSY:${predictions.cosy.length} NOESY:${predictions.noesy.length} using ${noesySource}.`);
   } catch (error) {
     setPredictorStatus(error.message || "Could not predict this structure.", true);
+  } finally {
+    if (runId === state.predictionRunId) {
+      setPredictionLoading(false);
+      setNoesyPending(false);
+    }
   }
 }
 
@@ -3982,6 +4234,9 @@ async function applyLaunchParams() {
 }
 
 NMRP.predict.addEventListener("click", predictNmr);
+NMRP.solvent?.addEventListener("change", () => {
+  if (state.lastSmiles) predictNmr();
+});
 NMRP.draw.addEventListener("click", sendSmilesToJsme);
 NMRP.smiles.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
