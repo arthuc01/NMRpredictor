@@ -33,7 +33,13 @@ function sendPptx(res, payload) {
 }
 
 const server = http.createServer((req, res) => {
-  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  let url;
+  try {
+    url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  } catch {
+    sendJson(res, 400, { error: "Malformed request URL." });
+    return;
+  }
 
   if (req.method === "OPTIONS") {
     res.writeHead(204, {

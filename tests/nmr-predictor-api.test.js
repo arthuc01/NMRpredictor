@@ -23,6 +23,12 @@ async function run() {
     "unsupported type should be rejected"
   );
 
+  assert.throws(
+    () => generateSpectrumCsv({ smiles: "C".repeat(500), type: "proton" }),
+    /too long/,
+    "overly long smiles should be rejected"
+  );
+
   const pptx = await generateSpectrumPresentation({ smiles: "CCO" });
   assert.equal(pptx.filename, "CCO-nmr-slides.pptx");
   assert.equal(typeof pptx.slideCount, "number");

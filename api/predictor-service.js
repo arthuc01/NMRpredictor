@@ -3,6 +3,7 @@ const PptxGenJS = require("pptxgenjs");
 const { buildPresentationFile } = require("../pptx-export");
 
 const SUPPORTED_TYPES = new Set(["proton", "carbon", "hsqc", "cosy", "noesy"]);
+const MAX_SMILES_LENGTH = 400;
 
 function csvEscape(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -62,6 +63,9 @@ function spectrumProfileRows(ctx, environments, type, sampleCount = null) {
 }
 
 function buildPredictions(smiles) {
+  if (smiles.length > MAX_SMILES_LENGTH) {
+    throw new Error(`SMILES string too long (max ${MAX_SMILES_LENGTH} characters).`);
+  }
   const ctx = loadPredictorContext();
   const graph = ctx.parseSmiles(smiles);
   const predictions1d = ctx.predictEnvironments(graph);

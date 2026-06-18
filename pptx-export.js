@@ -188,7 +188,7 @@
       .map((env) => {
         const localPeaks = peaks.filter((peak) => peak.env.signalId === env.signalId);
         const topPeak = localPeaks.reduce((best, peak) => (peak.intensity > (best?.intensity || 0) ? peak : best), null);
-        const peakY = topPeak ? profile.reduce((best, row) => Math.abs(row.ppm - topPeak.ppm) < Math.abs(best.ppm - topPeak.ppm) ? row : best, profile[0]).relativeIntensity : 0;
+        const peakY = topPeak ? relativeHeightAt(topPeak.ppm) : 0;
         return {
           x: xForPpm(env.ppm, domain, margin.left, plotW),
           y: yForValue(Math.min(100, peakY + 8), margin.top, plotH),
